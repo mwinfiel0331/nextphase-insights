@@ -1,58 +1,99 @@
 import streamlit as st
 import plotly.express as px
-from ..services.db_service import get_all_clients
+import pandas as pd
+from ..services.db_service import get_client_by_id
+from .admin.admin_dashboard import show_admin_dashboard
 
 def show_dashboard():
-    st.title("Process Optimization Dashboard")
+    """Main dashboard router"""
+    if st.session_state.get('is_admin', False):
+        dashboard_type = st.sidebar.radio(
+            "Dashboard View",
+            ["Customer Dashboard", "Admin Dashboard"]
+        )
+        
+        if dashboard_type == "Admin Dashboard":
+            show_admin_dashboard()
+            return
     
-    # Load client data
-    clients = get_all_clients()
+    show_customer_dashboard()
+
+def show_customer_dashboard():
+    """Individual customer view"""
+    st.title("Your Process Optimization Status")
     
-    # Dashboard Layout
+    # Get current client's data
+    client = get_client_by_id(st.session_state.get('client_id'))
+    if not client:
+        st.warning("Please log in to view your dashboard")
+        return
+    
+    # Company Overview
+    st.header(f"{client['company_name']} Overview")
+    
+    show_kpi_cards(client)
+    show_tool_analysis(client)
+
+def show_kpi_cards(client):
+    """Display KPI metrics for customer"""
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.metric(
-            "Total Clients",
-            len(clients),
-            "Active"
+            "Processes Identified",
+            client.get('manual_processes', 0),
+            "To Optimize"
         )
     
     with col2:
-        total_processes = sum(client.get('manual_processes', 0) for client in clients)
+        optimization_score = calculate_optimization_score(client)
         st.metric(
-            "Processes to Optimize",
-            total_processes,
-            "Identified"
+            "Optimization Score",
+            f"{optimization_score:.1f}%",
+            "Current Progress"
         )
     
     with col3:
-        avg_score = sum(calculate_optimization_score(client) for client in clients) / len(clients) if clients else 0
+        hours_saved = client.get('hours_per_week', 0) * (optimization_score/100)
         st.metric(
-            "Avg. Optimization Score",
-            f"{avg_score:.1f}%",
-            "Overall"
+            "Potential Hours Saved",
+            f"{hours_saved:.1f}",
+            "Weekly"
         )
-    
-    # Industry Distribution
-    if clients:
-        industry_counts = {}
-        for client in clients:
-            industry = client.get('industry', 'Other')
-            industry_counts[industry] = industry_counts.get(industry, 0) + 1
+
+def show_tool_analysis(client):
+    """Display tool usage analysis"""
+    if client.get('tool_selections'):
+        st.subheader("Current Tool Usage")
+        tool_data = []
+        for category, tools in client['tool_selections'].items():
+            if tools:
+                tool_data.extend([(category, tool) for tool in tools])
         
-        fig = px.pie(
-            values=list(industry_counts.values()),
-            names=list(industry_counts.keys()),
-            title="Client Industry Distribution"
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        if tool_data:
+            df = pd.DataFrame(tool_data, columns=['Category', 'Tool'])
+            fig = px.treemap(
+                df, 
+                path=['Category', 'Tool'],
+                title="Tool Distribution by Category"
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
 def calculate_optimization_score(client):
     """Calculate an optimization score based on client data"""
     score = 0
+    
+    # Base score from manual processes
     if client.get('manual_processes'):
         score += max(0, 100 - (client['manual_processes'] * 10))
-    if client.get('current_tools'):
-        score += len(client['current_tools']) * 5
+    
+    # Tool adoption score
+    if client.get('tool_selections'):
+        tool_count = sum(len(tools) for tools in client['tool_selections'].values())
+        score += min(50, tool_count * 5)
+    
+    # Progress score
+    if client.get('progress', 0):
+        score = (score + client['progress']) / 2
+    
     return min(100, score)
