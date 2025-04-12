@@ -1,11 +1,16 @@
-nextphase-insights-firebase-adminsdk-fbsvc-04421bbf0b.json
-# Firebase
+# Firebase credentials
+nextphase-insights-firebase*.json
+service-account-key.json
+
+# Environment files
+.env
+.env.local
+
+# Firebase config
 .firebaserc
 firebase.json
 firebase-debug.log
 *.log
-nextphase-insights-firebase-adminsdk*.json
-service-account-key.json
-.env
 .firebasesrc/
-.env.local
+nextphase-insights-firebase-adminsdk.json
+credentials-backup.json
