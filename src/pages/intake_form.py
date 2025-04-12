@@ -90,24 +90,149 @@ def show_company_info():
 def show_process_details():
     st.subheader("Process Assessment")
     
-    current_tools = st.multiselect(
-        "Current Tools & Software*",
-        options=[
-            "Microsoft Excel",
-            "Google Sheets",
+    # Business Overview
+    st.markdown("### Business Overview")
+    business_description = st.text_area(
+        "Business Description*",
+        placeholder="Briefly describe your business and its primary operations",
+        help="Provide a high-level overview of your business activities"
+    )
+    
+    # Challenges and Goals
+    st.markdown("### Challenges and Goals")
+    current_challenges = st.text_area(
+        "Current Workflow Challenges*",
+        placeholder="What are the main challenges you're facing with your current workflows?"
+    )
+    
+    main_pain_point = st.text_area(
+        "Primary Pain Point*",
+        placeholder="Describe your biggest pain point in more detail"
+    )
+    
+    partnership_goals = st.text_area(
+        "Partnership Goals*",
+        placeholder="What do you hope to achieve as a result of our partnership?"
+    )
+
+    # Current Tools Assessment
+    st.markdown("### Current Tools & Systems")
+    
+    tool_categories = {
+        "Communication & Messaging": [
             "Slack",
             "Microsoft Teams",
+            "Discord",
+            "Zoom",
+            "Google Meet",
+            "Other"
+        ],
+        "Task & Project Management": [
             "Asana",
             "Trello",
             "Jira",
             "Monday.com",
-            "Notion",
-            "Custom Software",
+            "ClickUp",
             "Other"
         ],
-        help="Select all tools currently used in your processes"
-    )
+        "Calendar & Scheduling": [
+            "Google Calendar",
+            "Outlook",
+            "Calendly",
+            "Other"
+        ],
+        "Productivity": [
+            "Microsoft Office",
+            "Google Workspace",
+            "Notion",
+            "Evernote",
+            "Other"
+        ],
+        "CRM": [
+            "Salesforce",
+            "HubSpot",
+            "Zoho",
+            "None",
+            "Other"
+        ],
+        "E-commerce & Payments": [
+            "Shopify",
+            "WooCommerce",
+            "Stripe",
+            "PayPal",
+            "Square",
+            "None",
+            "Other"
+        ],
+        "Data & Analytics": [
+            "Google Analytics",
+            "Tableau",
+            "Power BI",
+            "None",
+            "Other"
+        ],
+        "Social Media Management": [
+            "Hootsuite",
+            "Buffer",
+            "Later",
+            "None",
+            "Other"
+        ],
+        "Cloud Services": [
+            "AWS",
+            "Google Cloud",
+            "Azure",
+            "Dropbox",
+            "None",
+            "Other"
+        ],
+        "Marketing & Advertising": [
+            "Google Ads",
+            "Meta Ads",
+            "Mailchimp",
+            "None",
+            "Other"
+        ],
+        "Automation & Workflow": [
+            "Zapier",
+            "Make (Integromat)",
+            "Power Automate",
+            "None",
+            "Other"
+        ],
+        "Customer Support": [
+            "Zendesk",
+            "Intercom",
+            "Freshdesk",
+            "None",
+            "Other"
+        ]
+    }
 
+    # Create columns for tool selection
+    st.markdown("### Tool Assessment")
+    st.caption("Select the tools and systems currently in use")
+    
+    tool_selections = {}
+    for category, tools in tool_categories.items():
+        st.markdown(f"**{category}**")
+        tool_selections[category] = st.multiselect(
+            f"Select {category} tools",
+            options=tools,
+            key=f"tools_{category.lower().replace(' ', '_')}"
+        )
+        
+        # If "Other" is selected, show text input
+        if "Other" in tool_selections[category]:
+            other_tool = st.text_input(
+                f"Please specify other {category} tools",
+                key=f"other_{category.lower().replace(' ', '_')}"
+            )
+            if other_tool:
+                tool_selections[category].append(other_tool)
+
+    # Additional Details
+    st.markdown("### Process Details")
     col1, col2 = st.columns(2)
     with col1:
         manual_processes = st.number_input(
@@ -126,6 +251,20 @@ def show_process_details():
             value=10,
             help="Estimated hours per week spent on manual tasks"
         )
+
+    # Store data in session state
+    if 'form_data' not in st.session_state:
+        st.session_state.form_data = {}
+    
+    st.session_state.form_data.update({
+        'business_description': business_description,
+        'current_challenges': current_challenges,
+        'main_pain_point': main_pain_point,
+        'partnership_goals': partnership_goals,
+        'tool_selections': tool_selections,
+        'manual_processes': manual_processes,
+        'hours_per_week': hours_per_week
+    })
 
 def show_documentation_upload():
     st.subheader("Process Documentation")
