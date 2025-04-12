@@ -1,1 +1,8 @@
 nextphase-insights-firebase-adminsdk-fbsvc-04421bbf0b.json
+# Firebase
+.firebaserc
+firebase.json
+firebase-debug.log
+*.log
+nextphase-insights-firebase-adminsdk-*.json
+service-account-key.json
