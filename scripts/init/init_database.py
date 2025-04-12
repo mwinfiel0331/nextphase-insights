@@ -1,13 +1,80 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
+from google.cloud import firestore_admin_v1
+from google.cloud.firestore_admin_v1 import types
 from datetime import datetime
 import os
 import json
 import logging
+
+# Local imports
 from .firebase_init import initialize_firebase
-from ...utils.constants import UserType
+from .db_config import COLLECTIONS_CONFIG
+from src.utils.constants import UserType  # Changed to absolute import
 
 logger = logging.getLogger(__name__)
+
+def create_collection_indexes(client, collection_name, indexes):
+    """Create indexes for a collection using Admin SDK"""
+    try:
+        # Get project ID from client credentials
+        project_id = client._credentials.project_id
+        if not project_id:
+            logger.error("Could not determine project ID from credentials")
+            return False
+
+        # Initialize Admin client with explicit credentials
+        admin_client = firestore_admin_v1.FirestoreAdminClient()
+        parent = f"projects/{project_id}/databases/(default)/collectionGroups/{collection_name}"
+        
+        for index_config in indexes:
+            field_configs = []
+            for field_path, order in index_config['fields']:
+                field_configs.append(
+                    firestore_admin_v1.Index.IndexField(
+                        field_path=field_path,
+                        order=firestore_admin_v1.Index.IndexField.Order[order]
+                    )
+                )
+            
+            try:
+                logger.info(f"Creating index for {collection_name} with fields: {[f[0] for f in index_config['fields']]}")
+                index = firestore_admin_v1.Index(
+                    query_scope=firestore_admin_v1.Index.QueryScope.COLLECTION,
+                    fields=field_configs
+                )
+                
+                operation = admin_client.create_index(
+                    parent=parent,
+                    index=index
+                )
+                result = operation.result()  # Wait for completion
+                logger.info(f"Created index {result.name}")
+                
+            except Exception as e:
+                logger.error(f"Failed to create index: {str(e)}")
+                continue
+                
+        return True
+            
+    except Exception as e:
+        logger.error(f"Error creating indexes for {collection_name}: {str(e)}")
+        return False
+
+def create_document(collection_ref, doc_id, data):
+    """Create a single document in a collection"""
+    try:
+        doc_ref = collection_ref.document(doc_id)
+        # Check if document exists
+        if not doc_ref.get().exists:
+            doc_ref.set(data)
+            logger.info(f"Created document '{doc_id}'")
+        else:
+            logger.debug(f"Document '{doc_id}' already exists")
+        return True
+    except Exception as e:
+        logger.error(f"Error creating document '{doc_id}': {str(e)}")
+        return False
 
 def initialize_database():
     """Initialize database collections and documents"""
@@ -20,91 +87,40 @@ def initialize_database():
             return
             
         logger.info("Firebase initialized successfully")
+        
+        # Get Firestore client
         db = firestore.client()
         
-        # Define collection indexes
-        indexes = {
-            'users': [
-                {'fieldPath': 'user_type', 'mode': 'ASCENDING'},
-                {'fieldPath': 'created_at', 'mode': 'DESCENDING'}
-            ],
-            'intakes': [
-                {'fieldPath': 'user_id', 'mode': 'ASCENDING'},
-                {'fieldPath': 'created_at', 'mode': 'DESCENDING'},
-                {'fieldPath': 'status', 'mode': 'ASCENDING'}
-            ]
-        }
-        
-        # Create indexes
-        for collection_name, collection_indexes in indexes.items():
+        # Create collections and their documents
+        for collection_name, config in COLLECTIONS_CONFIG.items():
+            logger.info(f"Initializing '{collection_name}' collection...")
             collection_ref = db.collection(collection_name)
-            for index in collection_indexes:
-                collection_ref.create_index([
-                    firestore.FieldPath(index['fieldPath'])
-                ], mode=index['mode'])
-                logger.info(f"Created index for {collection_name}: {index['fieldPath']}")
-        
-        # Initialize collections
-        collections = {
-            'config': {
-                'industries': {
-                    'list': [
-                        "Accounting & Financial Services",
-                        "Agriculture & Farming",
-                        "Automotive",
-                        "Construction & Real Estate",
-                        "Consulting & Professional Services",
-                        "Education & Training",
-                        "Energy & Utilities",
-                        "Entertainment & Media",
-                        "Food & Beverage",
-                        "Government & Public Sector",
-                        "Healthcare & Medical",
-                        "Hospitality & Tourism",
-                        "Information Technology",
-                        "Insurance",
-                        "Legal Services",
-                        "Manufacturing",
-                        "Marketing & Advertising",
-                        "Non-Profit & NGO",
-                        "Pharmaceutical & Biotechnology",
-                        "Retail & E-commerce",
-                        "Software & Technology",
-                        "Telecommunications",
-                        "Transportation & Logistics",
-                        "Other"
-                    ],
-                    'created_at': datetime.now(),
-                    'updated_at': datetime.now()
-                }
-            },
-            'users': {
-                '_metadata': {
-                    'collection_created': datetime.now(),
-                    'description': 'Stores user profiles and authentication data'
-                }
-            },
-            'intakes': {
-                '_metadata': {
-                    'collection_created': datetime.now(),
-                    'description': 'Stores process intake forms'
-                }
-            },
-            'sessions': {
-                '_metadata': {
-                    'collection_created': datetime.now(),
-                    'description': 'Stores optimization sessions'
-                }
-            }
-        }
-        
-        # Create collections and documents
-        for collection_name, documents in collections.items():
-            logger.info(f"Initializing {collection_name}...")
-            for doc_id, data in documents.items():
-                db.collection(collection_name).document(doc_id).set(data)
-                logger.info(f"Created {collection_name}/{doc_id}")
 
+            # Create metadata document
+            if 'metadata' in config:
+                metadata = {
+                    **config['metadata'],
+                    'collection_created': datetime.now()
+                }
+                create_document(
+                    collection_ref, 
+                    '_metadata', 
+                    metadata
+                )
+
+            # Create predefined documents
+            if 'documents' in config:
+                for doc_id, doc_data in config['documents'].items():
+                    create_document(
+                        collection_ref,
+                        doc_id,
+                        doc_data
+                    )
+
+            # Create indexes
+            if 'indexes' in config:
+                create_collection_indexes(db, collection_name, config['indexes'])
+        
         # Create default admin if specified
         admin_email = os.getenv('ADMIN_EMAIL')
         if admin_email:
@@ -115,10 +131,11 @@ def initialize_database():
             create_test_data(db)
                 
         logger.info("Database initialization completed successfully!")
+        return True
         
     except Exception as e:
         logger.error(f"Database initialization error: {str(e)}")
-        raise
+        return False
 
 def create_default_admin(db: firestore.Client, admin_email: str):
     """Create default admin user if not exists"""

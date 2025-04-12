@@ -1,34 +1,44 @@
 import firebase_admin
-from firebase_admin import credentials
-import os
-import json
+from firebase_admin import credentials, firestore
 from pathlib import Path
+import json
+import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 def initialize_firebase():
-    """Initialize Firebase with required configurations"""
+    """Initialize Firebase Admin SDK with service account credentials"""
     try:
-        if not firebase_admin._apps:
-            # Get project root directory
-            root_dir = Path(__file__).parent.parent.parent
-            
-            # Look for service account key
-            cred_files = list(root_dir.glob('*firebase-adminsdk*.json'))
-            if not cred_files:
-                raise ValueError("Firebase credentials not found")
-            
-            # Load service account
-            with open(cred_files[0], 'r') as f:
-                service_account = json.load(f)
-            
-            # Initialize Firebase with auth config
-            cred = credentials.Certificate(service_account)
-            firebase_admin.initialize_app(cred, {
-                'projectId': service_account['project_id'],
-                'databaseURL': f"https://{service_account['project_id']}.firebaseio.com",
-                'storageBucket': f"{service_account['project_id']}.appspot.com",
-            })
+        # Check if already initialized
+        if firebase_admin._apps:
+            logger.debug("Firebase already initialized")
             return True
+
+        # Find credentials file
+        root_dir = Path(__file__).parent.parent.parent
+        cred_files = list(root_dir.glob('*firebase-adminsdk*.json'))
+        
+        if not cred_files:
+            logger.error("Firebase credentials not found in project root")
+            logger.error("Please download from Firebase Console > Project Settings > Service Accounts")
+            return False
             
+        cred_path = cred_files[0]
+        logger.info(f"Using credentials file: {cred_path.name}")
+
+        # Set environment variable for Admin SDK
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(cred_path.absolute())
+
+        # Initialize Firebase with credentials
+        cred = credentials.Certificate(str(cred_path))
+        firebase_admin.initialize_app(cred)
+        
+        # Verify initialization
+        db = firestore.client()
+        logger.info("Firebase successfully initialized")
+        return True
+
     except Exception as e:
-        print(f"❌ Firebase initialization error: {str(e)}")
+        logger.error(f"Firebase initialization failed: {str(e)}")
         return False

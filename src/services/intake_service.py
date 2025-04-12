@@ -130,3 +130,71 @@ class IntakeService:
             
         except Exception as e:
             raise Exception(f"Failed to update documentation: {str(e)}")
+
+    def get_user_intakes(self, user_id: str) -> list:
+        """Get all intakes for a specific user"""
+        try:
+            # Query intakes collection for user's submissions
+            query = (self.db.collection(self.collection)
+                    .where('user_id', '==', user_id)
+                    .order_by('created_at', direction=firestore.Query.DESCENDING))
+            
+            intakes = []
+            for doc in query.stream():
+                intake_data = doc.to_dict()
+                intake_data['id'] = doc.id
+                intakes.append(intake_data)
+            
+            return intakes
+            
+        except Exception as e:
+            logger.error(f"Error fetching user intakes: {str(e)}")
+            raise
+
+def save_intake_form(user_id: str, form_data: dict, status: str = 'DRAFT') -> str:
+    """Save intake form data to Firestore"""
+    try:
+        db = firestore.client()
+        
+        # Prepare intake document
+        intake_data = {
+            # Company Info
+            'company_info': {
+                'company_name': form_data.get('company_name', ''),
+                'industry': form_data.get('industry', ''),
+                'team_size': int(form_data.get('team_size', 0)),
+                'timeline': form_data.get('timeline', '')
+            },
+            # Process Details
+            'process_details': {
+                'process_name': form_data.get('process_name', ''),
+                'process_description': form_data.get('process_description', ''),
+                'current_challenges': form_data.get('current_challenges', ''),
+                'desired_outcomes': form_data.get('desired_outcomes', '')
+            },
+            # Documentation
+            'documentation': {
+                'attachments': form_data.get('attachments', []),
+                'additional_notes': form_data.get('additional_notes', '')
+            },
+            # System fields
+            'user_id': user_id,
+            'status': status,
+            'created_at': datetime.now(),
+            'updated_at': datetime.now()
+        }
+        
+        # Add submitted_at if status is SUBMITTED
+        if status == 'SUBMITTED':
+            intake_data['submitted_at'] = datetime.now()
+        
+        # Save to Firestore
+        doc_ref = db.collection('intakes').document()
+        doc_ref.set(intake_data)
+        
+        logger.info(f"Saved intake form with ID: {doc_ref.id}")
+        return doc_ref.id
+        
+    except Exception as e:
+        logger.error(f"Error saving intake form: {str(e)}")
+        raise
