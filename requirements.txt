@@ -1,0 +1,9 @@
+plotly
+# Firebase
+.firebaserc
+firebase.json
+firebase-debug.log
+*.log
+firebase-admin
+nextphase-insights-firebase-adminsdk-*.json
+service-account-key.json
