@@ -314,76 +314,198 @@ def show_documentation():
     )
 
 def show_review(user_data: dict):
-    """Display review section of the intake form"""
+    """Display review section with edit capability"""
     st.subheader("Review Your Submission")
     
     if not st.session_state.form_data:
         st.warning("No form data to review. Please fill out the previous sections first.")
         return
 
+    # Add edit mode toggle
+    is_edit_mode = st.toggle("Enable Edit Mode", key="edit_mode")
+    
     # Company Information
-    st.write("##### Company Information")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.text_input("Company Name", 
-                     value=st.session_state.form_data.get('company_name', ''),
-                     disabled=True)
-        st.text_input("Industry", 
-                     value=st.session_state.form_data.get('industry', ''),
-                     disabled=True)
-    with col2:
-        st.number_input("Team Size",
-                       value=int(st.session_state.form_data.get('team_size', 0)),
-                       disabled=True)
-        st.text_input("Timeline",
-                     value=st.session_state.form_data.get('timeline', ''),
-                     disabled=True)
+    with st.expander("Company Information", expanded=True):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.text_input(
+                "Company Name*",
+                value=st.session_state.form_data.get('company_name', ''),
+                disabled=not is_edit_mode
+            )
+            st.text_input(
+                "Contact Name*",
+                value=st.session_state.form_data.get('contact_name', ''),
+                disabled=not is_edit_mode
+            )
+            st.selectbox(
+                "Industry*",
+                options=[
+                    "Technology", "Healthcare", "Finance",
+                    "Manufacturing", "Retail", "Education",
+                    "Professional Services", "Other"
+                ],
+                index=0,
+                disabled=not is_edit_mode
+            )
+        with col2:
+            st.select_slider(
+                "Company Size*",
+                options=["1-10", "11-50", "51-200", "201-500", "500+"],
+                value=st.session_state.form_data.get('company_size', "1-10"),
+                disabled=not is_edit_mode
+            )
+            st.text_input(
+                "Contact Email*",
+                value=st.session_state.form_data.get('contact_email', ''),
+                disabled=not is_edit_mode
+            )
+            st.text_input(
+                "Role/Position*",
+                value=st.session_state.form_data.get('contact_role', ''),
+                disabled=not is_edit_mode
+            )
+
+    # Process Assessment
+    with st.expander("Process Assessment", expanded=True):
+        st.text_area(
+            "Business Description*",
+            value=st.session_state.form_data.get('business_description', ''),
+            disabled=not is_edit_mode
+        )
+        st.text_area(
+            "Current Workflow Challenges*",
+            value=st.session_state.form_data.get('current_challenges', ''),
+            disabled=not is_edit_mode
+        )
+        st.text_area(
+            "Primary Pain Point*",
+            value=st.session_state.form_data.get('main_pain_point', ''),
+            disabled=not is_edit_mode
+        )
+        st.text_area(
+            "Partnership Goals*",
+            value=st.session_state.form_data.get('partnership_goals', ''),
+            disabled=not is_edit_mode
+        )
+
+    # Tools Assessment
+    with st.expander("Current Tools & Systems", expanded=True):
+        tool_categories = {
+            "Communication & Messaging": [
+                "Slack", "Microsoft Teams", "Discord", "Zoom", "Google Meet", "Other"
+            ],
+            "Task & Project Management": [
+                "Asana", "Trello", "Jira", "Monday.com", "ClickUp", "Other"
+            ],
+            # ...existing categories...
+        }
+
+        tool_selections = st.session_state.form_data.get('tool_selections', {})
+        
+        if is_edit_mode:
+            # Edit mode: Show multiselect for each category
+            for category, tools in tool_categories.items():
+                st.markdown(f"**{category}**")
+                selected_tools = tool_selections.get(category, [])
+                tool_selections[category] = st.multiselect(
+                    f"Select {category} tools",
+                    options=tools,
+                    default=selected_tools,
+                    key=f"review_tools_{category.lower().replace(' ', '_')}"
+                )
+                
+                # If "Other" is selected, show text input
+                if "Other" in tool_selections[category]:
+                    other_tool = st.text_input(
+                        f"Please specify other {category} tools",
+                        value=next((t for t in selected_tools if t not in tools), ""),
+                        key=f"review_other_{category.lower().replace(' ', '_')}"
+                    )
+                    if other_tool and other_tool not in tool_selections[category]:
+                        tool_selections[category].append(other_tool)
+            
+            # Update form data with new selections
+            st.session_state.form_data['tool_selections'] = tool_selections
+        else:
+            # View mode: Show selected tools as text
+            for category, tools in tool_selections.items():
+                if tools:
+                    st.markdown(f"**{category}**")
+                    st.write(", ".join(tools))
 
     # Process Details
-    st.write("##### Process Details")
-    st.text_input("Process Name",
-                 value=st.session_state.form_data.get('process_name', ''),
-                 disabled=True)
-    st.text_area("Process Description",
-                value=st.session_state.form_data.get('process_description', ''),
-                disabled=True)
-    st.text_area("Current Challenges",
-                value=st.session_state.form_data.get('current_challenges', ''),
-                disabled=True)
-    st.text_area("Desired Outcomes",
-                value=st.session_state.form_data.get('desired_outcomes', ''),
-                disabled=True)
+    with st.expander("Process Details", expanded=True):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.number_input(
+                "Number of Manual Processes*",
+                value=st.session_state.form_data.get('manual_processes', 3),
+                min_value=1,
+                max_value=20,
+                disabled=not is_edit_mode
+            )
+        with col2:
+            st.number_input(
+                "Hours Spent on Manual Tasks*",
+                value=st.session_state.form_data.get('hours_per_week', 10),
+                min_value=1,
+                max_value=168,
+                disabled=not is_edit_mode
+            )
 
     # Documentation
-    st.write("##### Documentation")
-    attachments = st.session_state.form_data.get('attachments', [])
-    if attachments:
-        st.write("Attached Files:", ", ".join(attachments))
-    
-    notes = st.session_state.form_data.get('additional_notes', '')
-    if notes:
-        st.text_area("Additional Notes", value=notes, disabled=True)
+    with st.expander("Process Documentation", expanded=True):
+        attachments = st.session_state.form_data.get('attachments', [])
+        if attachments:
+            st.write("📎 Uploaded Files:")
+            for file in attachments:
+                st.text(f"• {file}")
+        else:
+            st.info("No files uploaded")
 
-    # Submit button
-    if st.button("Submit Process Intake", type="primary"):
-        try:
-            intake_service = IntakeService()
-            intake_id = intake_service.save_intake(
-                user_id=user_data['uid'],
-                form_data=st.session_state.form_data,
-                status='SUBMITTED'
-            )
-            st.success("Process intake submitted successfully!")
-            
-            # Reset form and return to dashboard
-            st.session_state.form_data = {}
-            st.session_state.form_section = 0
-            st.session_state.page = "dashboard"
-            st.rerun()
-            
-        except Exception as e:
-            logger.error(f"Error submitting intake form: {str(e)}")
-            st.error("Failed to submit form. Please try again.")
+    # Submission Actions
+    st.markdown("---")
+    if is_edit_mode:
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Save Draft", type="secondary", use_container_width=True):
+                try:
+                    intake_service = IntakeService()
+                    intake_id = intake_service.save_intake(
+                        user_id=user_data['uid'],
+                        form_data=st.session_state.form_data,
+                        status='DRAFT'
+                    )
+                    st.success("Draft saved successfully!")
+                except Exception as e:
+                    logger.error(f"Error saving draft: {str(e)}")
+                    st.error("Failed to save draft. Please try again.")
+        with col2:
+            if st.button("Submit", type="primary", use_container_width=True):
+                try:
+                    intake_service = IntakeService()
+                    intake_id = intake_service.save_intake(
+                        user_id=user_data['uid'],
+                        form_data=st.session_state.form_data,
+                        status='SUBMITTED'
+                    )
+                    st.success("Form submitted successfully!")
+                    # Reset form and return to dashboard
+                    st.session_state.form_data = {}
+                    st.session_state.form_section = 0
+                    st.session_state.page = "dashboard"
+                    st.rerun()
+                except Exception as e:
+                    logger.error(f"Error submitting form: {str(e)}")
+                    st.error("Failed to submit form. Please try again.")
+    else:
+        st.button(
+            "Submit", 
+            type="primary",
+            use_container_width=True,
+            help="Enable edit mode to make changes before submitting"
+        )
 
 def submit_form(user_id: str):
     """Submit the form data"""
