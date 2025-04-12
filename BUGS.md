@@ -2,6 +2,15 @@
 
 ## High Priority
 
+### ✅ Fixed Issues
+- [x] **Bug**: Admin dashboard not displaying for admin users
+  - **Status**: Fixed in v1.2.1
+  - **Fix**: Added proper user type checking and role-based routing
+  - **PR**: #124
+  - **Release**: v1.2.1
+
+### Active Issues
+
 ### Client Intake Form
 - [ ] **Bug**: Duplicate submit buttons appear in review section
   - **Impact**: User confusion and potential duplicate submissions
