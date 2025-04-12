@@ -34,34 +34,43 @@ def initialize_database_structure():
         # Define collections and their initial documents
         collections = {
             'clients': {
-                'metadata': {
+                '_metadata': {
                     'collection_created': datetime.now(),
                     'description': 'Stores client information and process assessments'
+                },
+                'sample_client': {
+                    'company_name': 'Sample Company',
+                    'industry': 'Technology',
+                    'company_size': '11-50',
+                    'contact_email': 'contact@sample.com',
+                    'created_at': datetime.now(),
+                    'company_id': 'sample_company'
                 }
             },
             'sessions': {
-                'metadata': {
+                '_metadata': {
                     'collection_created': datetime.now(),
                     'description': 'Tracks optimization sessions and progress'
                 }
             },
             'tools': {
-                'metadata': {
+                '_metadata': {
                     'collection_created': datetime.now(),
                     'description': 'Common tools and integrations catalog'
                 }
             }
         }
         
-        # Create collections and their metadata documents
-        print("\nCreating collections:")
-        print("--------------------")
-        for collection_name, initial_data in collections.items():
+        # Create collections and documents
+        print("\nCreating collections and documents:")
+        print("--------------------------------")
+        for collection_name, documents in collections.items():
             try:
-                db.collection(collection_name).document('_metadata').set(initial_data)
-                print(f"✓ Created collection: {collection_name}")
+                for doc_id, doc_data in documents.items():
+                    db.collection(collection_name).document(doc_id).set(doc_data)
+                    print(f"✓ Created {collection_name}/{doc_id}")
             except Exception as collection_error:
-                print(f"❌ Error creating collection {collection_name}: {str(collection_error)}")
+                print(f"❌ Error creating {collection_name}: {str(collection_error)}")
                 return False
             
         print("\n✅ Database structure initialized successfully!")

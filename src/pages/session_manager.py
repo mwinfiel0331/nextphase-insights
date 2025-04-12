@@ -8,15 +8,27 @@ def show_sessions():
     # Get all clients
     clients = get_all_clients()
     
-    # Client selection
-    selected_client = st.selectbox(
+    if not clients:
+        st.warning("No clients found. Please add clients through the intake form first.")
+        return
+        
+    # Client selection with error handling
+    client_names = [
+        client.get('company_name', 'Unknown Company') 
+        for client in clients
+    ]
+    
+    selected_client_name = st.selectbox(
         "Select Client",
-        options=[client['company_name'] for client in clients],
+        options=client_names,
         key="session_client_select"
     )
     
-    if selected_client:
-        client = next((c for c in clients if c['company_name'] == selected_client), None)
+    if selected_client_name:
+        client = next(
+            (c for c in clients if c.get('company_name') == selected_client_name), 
+            None
+        )
         
         if client:
             # Display client info

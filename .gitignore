@@ -1,16 +1,23 @@
 # Firebase credentials
-nextphase-insights-firebase*.json
-service-account-key.json
+*firebase-adminsdk*.json
+*service-account*.json
+credentials*.json
 
 # Environment files
 .env
 .env.local
+*.env
 
 # Firebase config
 .firebaserc
 firebase.json
 firebase-debug.log
 *.log
-.firebasesrc/
-nextphase-insights-firebase-adminsdk.json
-credentials-backup.json
+.firebase/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
