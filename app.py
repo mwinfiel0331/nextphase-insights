@@ -1,8 +1,16 @@
 import streamlit as st
-from intake_form import show_intake_form
-from dashboard import show_dashboard
+import sys
+from pathlib import Path
 
-# Configure the Streamlit page
+# Add src to Python path
+root_path = Path(__file__).parent
+sys.path.append(str(root_path))
+
+from src.pages.dashboard import show_dashboard
+from src.pages.intake_form import show_intake_form
+from src.pages.session_manager import show_sessions
+
+# Configure Streamlit
 st.set_page_config(
     page_title="NextPhase Insights",
     page_icon="📊",
@@ -10,24 +18,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Add custom CSS
-st.markdown("""
-    <style>
-    .main {
-        padding: 0rem 1rem;
-    }
-    .stButton>button {
-        width: 100%;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-# Sidebar navigation
+# Navigation
 st.sidebar.title("NextPhase Insights")
-page = st.sidebar.radio("Navigation", ["Dashboard", "Client Intake"])
+pages = {
+    "Dashboard": show_dashboard,
+    "Client Intake": show_intake_form,
+    "Session Manager": show_sessions
+}
 
-# Route to appropriate page
-if page == "Dashboard":
-    show_dashboard()
-elif page == "Client Intake":
-    show_intake_form()
+selected_page = st.sidebar.radio("Navigation", list(pages.keys()))
+pages[selected_page]()

@@ -1,6 +1,6 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
-from datetime import datetime
+import datetime
 import os
 from dotenv import load_dotenv
 import logging
@@ -14,12 +14,14 @@ load_dotenv()
 
 # Initialize Firebase with more detailed error handling
 try:
-    # Use the specific service account key file
-    cred = credentials.Certificate('nextphase-insights-firebase-adminsdk-fbsvc-04421bbf0b.json')
-    logger.info("Using service account credentials")
-    
-    firebase_admin.initialize_app(cred)
-    logger.info("Successfully initialized Firebase")
+    if not firebase_admin._apps:
+        service_account_files = [f for f in os.listdir('.') if f.endswith('.json') and 'firebase-adminsdk' in f]
+        if service_account_files:
+            cred = credentials.Certificate(service_account_files[0])
+            logger.info("Using service account credentials")
+            
+            firebase_admin.initialize_app(cred)
+            logger.info("Successfully initialized Firebase")
     
     # Initialize Firestore client
     db = firestore.client()
@@ -46,8 +48,8 @@ def save_client_data(intake_data):
         intake_data['company_id'] = company_id
         
         # Add metadata
-        intake_data['created_at'] = datetime.now()
-        intake_data['updated_at'] = datetime.now()
+        intake_data['created_at'] = datetime.datetime.now()
+        intake_data['updated_at'] = datetime.datetime.now()
         intake_data['status'] = 'new'
         
         # Save to Firestore
@@ -100,11 +102,45 @@ def update_client_data(company_id, update_data):
         update_data (dict): Data to update
     """
     try:
-        update_data['updated_at'] = datetime.now()
+        update_data['updated_at'] = datetime.datetime.now()
         doc_ref = db.collection('clients').document(company_id)
         doc_ref.update(update_data)
     except Exception as e:
         logger.error(f"Error updating client data: {str(e)}")
+        raise e
+
+def save_session_data(session_data):
+    """
+    Save session data to Firestore
+    
+    Args:
+        session_data (dict): Dictionary containing session data
+    Returns:
+        str: Document ID of the created record
+    """
+    try:
+        doc_ref = db.collection('sessions').document()
+        session_data['created_at'] = datetime.datetime.now()
+        doc_ref.set(session_data)
+        return doc_ref.id
+    except Exception as e:
+        logger.error(f"Error saving session data: {str(e)}")
+        raise e
+
+def get_client_sessions(client_id):
+    """
+    Retrieve all sessions for a specific client
+    
+    Args:
+        client_id (str): Client identifier
+    Returns:
+        list: List of session dictionaries
+    """
+    try:
+        sessions = db.collection('sessions').where('client_id', '==', client_id).stream()
+        return [doc.to_dict() for doc in sessions]
+    except Exception as e:
+        logger.error(f"Error retrieving client sessions: {str(e)}")
         raise e
 
 # Add a test function to verify connection
@@ -112,7 +148,7 @@ def test_firebase_connection():
     try:
         # Test write
         test_ref = db.collection('_test').document('connection_test')
-        test_ref.set({'timestamp': datetime.now(), 'status': 'testing'})
+        test_ref.set({'timestamp': datetime.datetime.now(), 'status': 'testing'})
         logger.info("Successfully wrote to Firestore")
         return True
     except Exception as e:

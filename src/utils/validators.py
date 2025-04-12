@@ -1,41 +1,52 @@
 import re
-from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
-class ValidationError(Exception):
-    pass
-
-def validate_client_data(data: Dict[str, Any]) -> Optional[Dict[str, str]]:
-    """
-    Validates client intake data before saving to Firestore
+def validate_client_data(data: Dict[str, Any]):
+    """Validate client intake data"""
+    errors = []
     
-    Args:
-        data (dict): Client data to validate
-    Returns:
-        Optional[Dict[str, str]]: Dictionary of validation errors, if any
-    """
-    errors = {}
-
     # Required fields
-    required_fields = ['company_name', 'industry', 'company_size', 'contact_email']
-    for field in required_fields:
+    required_fields = {
+        'company_name': 'Company name is required',
+        'industry': 'Industry is required',
+        'contact_email': 'Contact email is required'
+    }
+    
+    for field, message in required_fields.items():
         if not data.get(field):
-            errors[field] = f"{field} is required"
-
+            errors.append(message)
+    
     # Email validation
     if data.get('contact_email'):
         email_pattern = r'^[^@]+@[^@]+\.[^@]+$'
         if not re.match(email_pattern, data['contact_email']):
-            errors['contact_email'] = "Invalid email format"
+            errors.append('Invalid email format')
+    
+    # Tools validation
+    if not data.get('current_tools'):
+        errors.append('Please select at least one current tool')
+    
+    # Process count validation
+    if data.get('manual_processes', 0) < 1:
+        errors.append('Number of manual processes must be at least 1')
+    
+    return errors
 
-    # Industry validation
-    valid_industries = ['Technology', 'Healthcare', 'Finance', 'Retail', 'Manufacturing', 'Other']
-    if data.get('industry') and data['industry'] not in valid_industries:
-        errors['industry'] = "Invalid industry selection"
-
-    # Company size validation
-    valid_sizes = ['1-10', '11-50', '51-200', '201-500', '500+']
-    if data.get('company_size') and data['company_size'] not in valid_sizes:
-        errors['company_size'] = "Invalid company size"
-
-    return errors if errors else None
+def validate_session_data(data: Dict[str, Any]):
+    """Validate session data"""
+    errors = []
+    
+    required_fields = {
+        'client_id': 'Client ID is required',
+        'session_type': 'Session type is required',
+        'notes': 'Session notes are required'
+    }
+    
+    for field, message in required_fields.items():
+        if not data.get(field):
+            errors.append(message)
+    
+    if data.get('progress') is not None and not 0 <= data['progress'] <= 100:
+        errors.append('Progress must be between 0 and 100')
+    
+    return errors
