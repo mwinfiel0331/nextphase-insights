@@ -2,7 +2,7 @@ import streamlit as st
 import plotly.express as px
 import pandas as pd
 from ...services.db_service import get_all_clients
-from ..dashboard import calculate_optimization_score
+from ...utils.scoring import calculate_optimization_score
 
 def show_admin_dashboard():
     """Admin/reviewer overview dashboard"""
