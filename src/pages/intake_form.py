@@ -42,22 +42,20 @@ def show_intake_form(user_data: dict):
             show_review(user_data)
 
         # Navigation buttons
-        cols = st.columns([1, 1, 1])
+        st.markdown("---")
+        col1, col2, col3 = st.columns([1, 2, 1])
         
-        with cols[0]:
+        with col1:
             if current_section > 0:
-                if st.button("← Previous"):
+                if st.button("← Previous", use_container_width=True):
                     st.session_state.form_section -= 1
                     st.rerun()
 
-        with cols[2]:
+        with col3:
             if current_section < len(progress_sections) - 1:
-                if st.button("Next →"):
+                if st.button("Next →", type="primary", use_container_width=True):
                     st.session_state.form_section += 1
                     st.rerun()
-            else:
-                if st.button("Submit"):
-                    submit_form(user_data['uid'])
 
     except Exception as e:
         logger.error(f"Error displaying intake form: {str(e)}")
@@ -398,41 +396,53 @@ def show_review(user_data: dict):
             "Task & Project Management": [
                 "Asana", "Trello", "Jira", "Monday.com", "ClickUp", "Other"
             ],
-            # ...existing categories...
+            "Calendar & Scheduling": [
+                "Google Calendar", "Outlook", "Calendly", "Other"
+            ],
+            # ...rest of your tool categories...
         }
 
         tool_selections = st.session_state.form_data.get('tool_selections', {})
         
         if is_edit_mode:
             # Edit mode: Show multiselect for each category
+            updated_selections = {}
             for category, tools in tool_categories.items():
                 st.markdown(f"**{category}**")
-                selected_tools = tool_selections.get(category, [])
-                tool_selections[category] = st.multiselect(
+                selected = tool_selections.get(category, [])
+                new_selection = st.multiselect(
                     f"Select {category} tools",
                     options=tools,
-                    default=selected_tools,
+                    default=selected,
                     key=f"review_tools_{category.lower().replace(' ', '_')}"
                 )
                 
-                # If "Other" is selected, show text input
-                if "Other" in tool_selections[category]:
-                    other_tool = st.text_input(
-                        f"Please specify other {category} tools",
-                        value=next((t for t in selected_tools if t not in tools), ""),
-                        key=f"review_other_{category.lower().replace(' ', '_')}"
-                    )
-                    if other_tool and other_tool not in tool_selections[category]:
-                        tool_selections[category].append(other_tool)
+                if new_selection:  # Only add category if tools were selected
+                    updated_selections[category] = new_selection
+                    
+                    # If "Other" is selected, show text input
+                    if "Other" in new_selection:
+                        other_tool = st.text_input(
+                            f"Please specify other {category} tools",
+                            value=next((t for t in selected if t not in tools), ""),
+                            key=f"review_other_{category.lower().replace(' ', '_')}"
+                        )
+                        if other_tool and other_tool not in updated_selections[category]:
+                            updated_selections[category].append(other_tool)
             
             # Update form data with new selections
-            st.session_state.form_data['tool_selections'] = tool_selections
+            st.session_state.form_data['tool_selections'] = updated_selections
         else:
-            # View mode: Show selected tools as text
+            # View mode: Show only categories with selected tools
+            has_tools = False
             for category, tools in tool_selections.items():
-                if tools:
+                if tools:  # Only show categories with selected tools
+                    has_tools = True
                     st.markdown(f"**{category}**")
                     st.write(", ".join(tools))
+            
+            if not has_tools:
+                st.info("No tools currently selected")
 
     # Process Details
     with st.expander("Process Details", expanded=True):
@@ -482,7 +492,7 @@ def show_review(user_data: dict):
                     logger.error(f"Error saving draft: {str(e)}")
                     st.error("Failed to save draft. Please try again.")
         with col2:
-            if st.button("Submit", type="primary", use_container_width=True):
+            if st.button("Submit Form", type="primary", use_container_width=True):
                 try:
                     intake_service = IntakeService()
                     intake_id = intake_service.save_intake(
@@ -500,12 +510,7 @@ def show_review(user_data: dict):
                     logger.error(f"Error submitting form: {str(e)}")
                     st.error("Failed to submit form. Please try again.")
     else:
-        st.button(
-            "Submit", 
-            type="primary",
-            use_container_width=True,
-            help="Enable edit mode to make changes before submitting"
-        )
+        st.info("Enable edit mode to make changes and submit the form")
 
 def submit_form(user_id: str):
     """Submit the form data"""
