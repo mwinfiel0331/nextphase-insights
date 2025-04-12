@@ -1,5 +1,6 @@
 import streamlit as st
 from ...services.auth_service import create_user, sign_in_user
+from ...services.db_service import get_industries
 
 def show_login():
     """Display login/registration interface"""
@@ -45,6 +46,9 @@ def show_login_form():
 
 def show_registration_form():
     """Display the registration form"""
+    # Get industries from database
+    industries = get_industries()
+    
     with st.form("registration_form"):
         st.subheader("Create Your Account")
         
@@ -56,15 +60,8 @@ def show_registration_form():
             company_name = st.text_input("Company Name*")
             industry = st.selectbox(
                 "Industry*",
-                options=[
-                    "Technology",
-                    "Healthcare",
-                    "Finance",
-                    "Manufacturing",
-                    "Retail",
-                    "Education",
-                    "Other"
-                ]
+                options=industries if industries else ["Other"],
+                help="Select the primary industry of your business"
             )
         
         with col2:
