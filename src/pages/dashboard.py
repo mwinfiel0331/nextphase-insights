@@ -4,9 +4,19 @@ import pandas as pd
 from ..services.db_service import get_client_by_id
 from ..utils.scoring import calculate_optimization_score
 from .admin.admin_dashboard import show_admin_dashboard
+from .components.process_analyzer import show_process_analysis
 
 def show_dashboard():
-    """Main dashboard router"""
+    """Display main dashboard"""
+    st.title("Process Optimization Dashboard")
+    
+    # Get client data
+    client_id = st.session_state.get('client_id')
+    client_data = get_client_by_id(client_id) if client_id else {}
+    
+    # Add AI analysis section
+    show_process_analysis(client_data)
+    
     if st.session_state.get('is_admin', False):
         dashboard_type = st.sidebar.radio(
             "Dashboard View",
@@ -17,7 +27,15 @@ def show_dashboard():
             show_admin_dashboard()
             return
     
-    show_customer_dashboard()
+    # Add AI analysis section
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        show_process_analysis(client_data)
+    
+    with col2:
+        # Show other metrics
+        show_customer_dashboard()
 
 def show_customer_dashboard():
     """Individual customer view"""

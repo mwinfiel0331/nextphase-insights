@@ -1,96 +1,133 @@
 # NextPhase Insights
 
-Process optimization platform built with Streamlit and Firebase.
+AI-powered process optimization and automation analysis platform built with Streamlit, Firebase, and OpenAI.
 
-## Features
+## 🚀 Features
 
-- 📊 Real-time process optimization dashboard
+- 🤖 AI-powered process analysis
+- 📊 Automation potential scoring
+- 💾 Intelligent caching system
+- 🔄 Process optimization recommendations
 - 📝 Client intake management
-- 📅 Session tracking and progress monitoring
-- 🔒 Secure data storage with Firebase
-- 📈 Data visualization and analytics
+- 📈 Data visualization
+- 🔐 Secure data storage
 
-## Prerequisites
+## 📋 Prerequisites
 
-- Python 3.9+
-- Firebase project credentials
-- Streamlit 1.27.0+
-- Firebase Admin SDK
+- Python 3.8+
+- OpenAI API key
+- Firebase account
+- Git
 
-## Installation
+## ⚡ Quick Start
 
-1. Clone the repository:
+1. Clone and setup:
 ```powershell
 git clone https://github.com/yourusername/nextphase-insights.git
 cd nextphase-insights
-```
-
-2. Install dependencies:
-```powershell
+python -m venv venv
+.\venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. Set up environment variables:
-   - Copy `.env.example` to `.env`
-   - Add your Firebase credentials
-
-## Project Structure
-
-```
-nextphase-insights/
-├── src/
-│   ├── pages/           # Application pages
-│   ├── services/        # Database and auth services
-│   └── utils/           # Utility functions
-├── tests/               # Test files
-├── app.py              # Main application
-├── requirements.txt    # Dependencies
-└── README.md          # This file
+2. Configure environment:
+```properties
+# .env file
+OPENAI_API_KEY=your_openai_key
+FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_CLIENT_EMAIL=your_service_account_email
+FIREBASE_PRIVATE_KEY=your_private_key
 ```
 
-## Running the Application
-
+3. Run the application:
 ```powershell
 streamlit run app.py
 ```
 
-## Development
+## 🔧 Usage
 
-1. Create virtual environment:
-```powershell
-python -m venv env
-.\env\Scripts\activate
+### Process Analysis
+```python
+from src.utils.ai_analyzer import ProcessAnalyzer
+
+analyzer = ProcessAnalyzer()
+
+# Get process recommendations
+result = analyzer.get_process_recommendations(
+    process_name="Invoice Processing",
+    current_steps=["Manual data entry", "Email approvals"],
+    industry="Finance"
+)
+
+# Calculate automation potential
+score = analyzer.score_automation_potential({
+    'name': 'Invoice Processing',
+    'description': 'Manual invoice processing workflow',
+    'tools': ['Email', 'Excel'],
+    'frequency': 'Daily'
+})
 ```
 
-2. Install dev dependencies:
+## 🧪 Testing
+
+Run tests with coverage:
 ```powershell
-pip install -r requirements-dev.txt
+pytest tests/ -v --cov=src
 ```
 
-## Security
+Generate coverage report:
+```powershell
+pytest tests/ --cov=src --cov-report=html
+```
 
-- Environment-based configuration
-- Secure credential management
-- Firebase security rules
+## 📁 Project Structure
 
-## Contributing
+```
+nextphase-insights/
+├── src/
+│   ├── pages/
+│   │   ├── components/
+│   │   │   └── process_analyzer.py
+│   │   ├── dashboard.py
+│   │   └── intake_form.py
+│   ├── services/
+│   │   └── db_service.py
+│   └── utils/
+│       └── ai_analyzer.py
+├── tests/
+│   └── unit/
+│       └── test_open_ai.py
+├── .env
+├── CHANGELOG.md
+└── README.md
+```
+
+## 🔐 Security
+
+- Store API keys in environment variables
+- Use Firebase Authentication
+- Regular API key rotation
+- Rate limiting implementation
+- Secure data validation
+
+## 📚 Documentation
+
+- [OpenAI API Docs](https://platform.openai.com/docs)
+- [Firebase Docs](https://firebase.google.com/docs)
+- [Streamlit Docs](https://docs.streamlit.io/)
+
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create feature branch: `git checkout -b feature/name`
-3. Commit changes: `git commit -am 'Add feature'`
-4. Push to branch: `git push origin feature/name`
-5. Submit pull request
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## Version History
-
-See [CHANGELOG.md](CHANGELOG.md) for version details.
-
-## License
+## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgments
+## 📈 Version History
 
-- [Streamlit](https://streamlit.io/)
-- [Firebase](https://firebase.google.com/)
-- [Plotly](https://plotly.com/)
+See [CHANGELOG.md](CHANGELOG.md) for release details.
