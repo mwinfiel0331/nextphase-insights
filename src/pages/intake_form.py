@@ -511,13 +511,3 @@ def show_review(user_data: dict):
                     st.error("Failed to submit form. Please try again.")
     else:
         st.info("Enable edit mode to make changes and submit the form")
-
-def submit_form(user_id: str):
-    """Submit the form data"""
-    try:
-        intake_service = IntakeService()
-        intake_service.save_intake_form(user_id, st.session_state.form_data)
-        st.success("Form submitted successfully!")
-    except Exception as e:
-        logger.error(f"Error submitting form: {str(e)}")
-        st.error("An error occurred while submitting the form. Please try again.")
