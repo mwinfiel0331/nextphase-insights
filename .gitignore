@@ -6,3 +6,6 @@ firebase-debug.log
 *.log
 nextphase-insights-firebase-adminsdk-*.json
 service-account-key.json
+.env
+.firebasesrc/
+.env.local

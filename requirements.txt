@@ -1,9 +1,14 @@
-plotly
+
 # Firebase
 .firebaserc
 firebase.json
 firebase-debug.log
 *.log
-firebase-admin
 nextphase-insights-firebase-adminsdk-*.json
 service-account-key.json
+streamlit==1.27.0
+plotly==5.18.0
+firebase-admin==6.2.0
+pandas==2.0.0
+python-dotenv==1.0.0
+python-dotenv
