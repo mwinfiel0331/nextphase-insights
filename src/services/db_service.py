@@ -167,6 +167,30 @@ def get_client_sessions(client_id):
         logger.error(f"Error retrieving client sessions: {str(e)}")
         raise e
 
+def get_industries():
+    """Retrieve industries list from Firestore"""
+    try:
+        doc = db.collection('config').document('industries').get()
+        if doc.exists:
+            return doc.to_dict().get('list', [])
+        return []
+    except Exception as e:
+        logger.error(f"Error retrieving industries: {str(e)}")
+        return []
+
+def update_industries(industries_list):
+    """Update industries list in Firestore"""
+    try:
+        db.collection('config').document('industries').set({
+            'list': industries_list,
+            'updated_at': datetime.datetime.now()
+        })
+        logger.info("Industries list updated successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Error updating industries: {str(e)}")
+        return False
+
 # Add a test function to verify connection
 def test_firebase_connection():
     try:
