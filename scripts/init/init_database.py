@@ -116,10 +116,6 @@ def initialize_database():
                         doc_id,
                         doc_data
                     )
-
-            # Create indexes
-            if 'indexes' in config:
-                create_collection_indexes(db, collection_name, config['indexes'])
         
         # Create default admin if specified
         admin_email = os.getenv('ADMIN_EMAIL')

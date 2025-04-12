@@ -21,7 +21,7 @@ AI-powered process optimization and automation analysis platform built with Stre
 
 ## ⚡ Quick Start
 
-1. Clone and setup:
+## Clone and setup:
 ```powershell
 git clone https://github.com/yourusername/nextphase-insights.git
 cd nextphase-insights
@@ -30,7 +30,7 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-2. Configure environment:
+## Configure the Environment
 ```properties
 # .env file
 OPENAI_API_KEY=your_openai_key
@@ -38,8 +38,41 @@ FIREBASE_PROJECT_ID=your_project_id
 FIREBASE_CLIENT_EMAIL=your_service_account_email
 FIREBASE_PRIVATE_KEY=your_private_key
 ```
+## Database Initialization
 
-3. Run the application:
+The application requires two initialization steps:
+
+### Initialize Database Structure
+
+Run the database initialization script to create collections and base documents:
+
+```powershell
+python -m scripts.init.run_init
+```
+
+This will:
+- Set up Firebase connection
+- Create required collections
+- Add metadata documents
+- Configure base settings
+
+### Create Database Indexes
+
+Run the index management script to create required Firestore indexes:
+
+```powershell
+python scripts/manage_indexes.py
+```
+
+This will:
+- Create composite indexes for queries
+- Set up query optimization
+- Enable sorting and filtering
+
+## Running the Application
+
+Start the Streamlit server:
+
 ```powershell
 streamlit run app.py
 ```
