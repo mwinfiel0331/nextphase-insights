@@ -39,37 +39,38 @@ COLLECTIONS_CONFIG = {
         'metadata': {
             'description': 'Process intake form submissions',
             'schema': {
-                # Form sections
                 'company_info': {
                     'company_name': 'string',
+                    'contact_name': 'string',
                     'industry': 'string',
-                    'team_size': 'number',
-                    'timeline': 'string'
+                    'company_size': 'string',
+                    'contact_email': 'string',
+                    'contact_role': 'string'
+                },
+                'process_assessment': {
+                    'business_description': 'string',
+                    'current_challenges': 'string',
+                    'main_pain_point': 'string',
+                    'partnership_goals': 'string'
+                },
+                'tools_assessment': {
+                    'tool_selections': 'map'
                 },
                 'process_details': {
-                    'process_name': 'string',
-                    'process_description': 'string',
-                    'current_challenges': 'string',
-                    'desired_outcomes': 'string'
+                    'manual_processes': 'number',
+                    'hours_per_week': 'number'
                 },
                 'documentation': {
-                    'attachments': 'array',
-                    'additional_notes': 'string'
+                    'attachments': 'array'
                 },
-                # System fields
-                'user_id': 'string',
-                'status': 'string',
-                'created_at': 'timestamp',
-                'updated_at': 'timestamp',
-                'submitted_at': 'timestamp'
+                'system_fields': {
+                    'user_id': 'string',
+                    'status': 'string',
+                    'created_at': 'timestamp',
+                    'updated_at': 'timestamp'
+                }
             },
-            'statuses': [
-                'DRAFT',
-                'SUBMITTED',
-                'IN_REVIEW',
-                'COMPLETED',
-                'ARCHIVED'
-            ],
+            'statuses': ['DRAFT', 'SUBMITTED', 'IN_REVIEW', 'COMPLETED'],
             'created_at': datetime.now()
         }
     },

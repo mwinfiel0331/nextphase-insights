@@ -170,6 +170,31 @@ def create_test_data(db: firestore.Client):
         db.collection('users').document().set(test_user)
         logger.info("Created test user data")
 
+def init_collections():
+    """Initialize database collections and indexes"""
+    try:
+        db = firestore.client()
+        
+        # Create collections and indexes
+        for collection_name, config in COLLECTIONS_CONFIG.items():
+            logger.info(f"Initializing collection: {collection_name}")
+            
+            # Create indexes
+            if 'indexes' in config:
+                create_collection_indexes(db, collection_name, config['indexes'])
+            
+            # Add metadata document
+            if 'metadata' in config:
+                metadata_ref = db.collection(collection_name).document('_metadata')
+                metadata_ref.set(config['metadata'])
+        
+        logger.info("Database initialization completed successfully")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Database initialization failed: {str(e)}")
+        return False
+
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
