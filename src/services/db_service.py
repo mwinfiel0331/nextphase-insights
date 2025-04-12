@@ -79,6 +79,30 @@ def get_client_data(company_id):
         logger.error(f"Error retrieving client data: {str(e)}")
         raise e
 
+def get_client_by_id(client_id):
+    """
+    Retrieve a specific client by ID
+    
+    Args:
+        client_id (str): The client's unique identifier
+        
+    Returns:
+        dict: Client data or None if not found
+    """
+    try:
+        if not client_id:
+            return None
+            
+        client_doc = db.collection('clients').document(client_id).get()
+        
+        if client_doc.exists:
+            return client_doc.to_dict()
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error retrieving client {client_id}: {str(e)}")
+        return None
+
 def get_all_clients():
     """
     Retrieve all clients

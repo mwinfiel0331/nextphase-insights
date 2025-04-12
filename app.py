@@ -9,6 +9,7 @@ sys.path.append(str(root_path))
 from src.pages.dashboard import show_dashboard
 from src.pages.intake_form import show_intake_form
 from src.pages.session_manager import show_sessions
+from src.pages.auth.login import show_login
 
 # Configure Streamlit
 st.set_page_config(
