@@ -25,20 +25,20 @@ def main():
     st.set_page_config(page_title="NextPhase Insights", page_icon="🚀", layout="wide")
     init_session_state()
     
+    # Initialize session state
+    if "page" not in st.session_state:
+        st.session_state.page = "dashboard"
+        
     if not st.session_state.authenticated:
         show_auth_page()
     else:
-        # Route based on user role and current view
-        if st.session_state.show_intake:
+        # Page routing
+        if st.session_state.page == "intake_form":
+            logger.info("Showing intake form")
             show_intake_form(st.session_state.user_data)
-        elif st.session_state.show_analysis:
-            show_analysis(st.session_state.current_intake)
-        else:
-            # Route to appropriate dashboard based on user_type
-            if st.session_state.user_data.get('user_type') == UserType.ADMIN.value:
-                show_admin_dashboard(st.session_state.user_data)
-            else:
-                show_client_dashboard(st.session_state.user_data)
+        elif st.session_state.page == "dashboard":
+            logger.info("Showing dashboard")
+            show_client_dashboard(st.session_state.user_data)
 
 def show_auth_page():
     """Show login/signup page"""

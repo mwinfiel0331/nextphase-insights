@@ -134,9 +134,9 @@ class IntakeService:
     def get_user_intakes(self, user_id: str) -> list:
         """Get all intakes for a specific user"""
         try:
-            # Query intakes collection for user's submissions
+            # Use filter keyword argument for query
             query = (self.db.collection(self.collection)
-                    .where('user_id', '==', user_id)
+                    .filter('user_id', '==', user_id)
                     .order_by('created_at', direction=firestore.Query.DESCENDING))
             
             intakes = []
@@ -145,11 +145,12 @@ class IntakeService:
                 intake_data['id'] = doc.id
                 intakes.append(intake_data)
             
+            logger.debug(f"Retrieved {len(intakes)} intakes for user {user_id}")
             return intakes
             
         except Exception as e:
             logger.error(f"Error fetching user intakes: {str(e)}")
-            raise
+            return []
 
 def save_intake_form(user_id: str, form_data: dict, status: str = 'DRAFT') -> str:
     """Save intake form data to Firestore"""

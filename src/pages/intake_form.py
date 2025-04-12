@@ -314,16 +314,76 @@ def show_documentation():
     )
 
 def show_review(user_data: dict):
-    st.subheader("Review Information")
+    """Display review section of the intake form"""
+    st.subheader("Review Your Submission")
     
-    # Display summary of entered information
-    if 'form_data' in st.session_state:
-        data = st.session_state.form_data
-        
-        st.info("Company Information")
-        st.write(f"**Company:** {data.get('company_name')}")
-        st.write(f"**Industry:** {data.get('industry')}")
-        st.write(f"**Size:** {data.get('company_size')}")
+    if not st.session_state.form_data:
+        st.warning("No form data to review. Please fill out the previous sections first.")
+        return
+
+    # Company Information
+    st.write("##### Company Information")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.text_input("Company Name", 
+                     value=st.session_state.form_data.get('company_name', ''),
+                     disabled=True)
+        st.text_input("Industry", 
+                     value=st.session_state.form_data.get('industry', ''),
+                     disabled=True)
+    with col2:
+        st.number_input("Team Size",
+                       value=int(st.session_state.form_data.get('team_size', 0)),
+                       disabled=True)
+        st.text_input("Timeline",
+                     value=st.session_state.form_data.get('timeline', ''),
+                     disabled=True)
+
+    # Process Details
+    st.write("##### Process Details")
+    st.text_input("Process Name",
+                 value=st.session_state.form_data.get('process_name', ''),
+                 disabled=True)
+    st.text_area("Process Description",
+                value=st.session_state.form_data.get('process_description', ''),
+                disabled=True)
+    st.text_area("Current Challenges",
+                value=st.session_state.form_data.get('current_challenges', ''),
+                disabled=True)
+    st.text_area("Desired Outcomes",
+                value=st.session_state.form_data.get('desired_outcomes', ''),
+                disabled=True)
+
+    # Documentation
+    st.write("##### Documentation")
+    attachments = st.session_state.form_data.get('attachments', [])
+    if attachments:
+        st.write("Attached Files:", ", ".join(attachments))
+    
+    notes = st.session_state.form_data.get('additional_notes', '')
+    if notes:
+        st.text_area("Additional Notes", value=notes, disabled=True)
+
+    # Submit button
+    if st.button("Submit Process Intake", type="primary"):
+        try:
+            intake_service = IntakeService()
+            intake_id = intake_service.save_intake(
+                user_id=user_data['uid'],
+                form_data=st.session_state.form_data,
+                status='SUBMITTED'
+            )
+            st.success("Process intake submitted successfully!")
+            
+            # Reset form and return to dashboard
+            st.session_state.form_data = {}
+            st.session_state.form_section = 0
+            st.session_state.page = "dashboard"
+            st.rerun()
+            
+        except Exception as e:
+            logger.error(f"Error submitting intake form: {str(e)}")
+            st.error("Failed to submit form. Please try again.")
 
 def submit_form(user_id: str):
     """Submit the form data"""
