@@ -10,38 +10,37 @@ logger = logging.getLogger(__name__)
 
 def init_session_state():
     """Initialize session state variables"""
-    if 'authenticated' not in st.session_state:
+    if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
-    if 'user_data' not in st.session_state:
-        st.session_state.user_data = None
-    if 'show_intake' not in st.session_state:
-        st.session_state.show_intake = False
-    if 'show_analysis' not in st.session_state:
-        st.session_state.show_analysis = False
-    if 'current_intake' not in st.session_state:
-        st.session_state.current_intake = None
+    if "user_data" not in st.session_state:
+        st.session_state.user_data = {}
+    if "page" not in st.session_state:
+        st.session_state.page = "dashboard"
+    if "user_type" not in st.session_state:
+        st.session_state.user_type = None
 
 def main():
+    """Main application entry point"""
     st.set_page_config(page_title="NextPhase Insights", page_icon="🚀", layout="wide")
     init_session_state()
     
-    # Initialize session state
-    if "page" not in st.session_state:
-        st.session_state.page = "dashboard"
-        
     if not st.session_state.authenticated:
         show_auth_page()
     else:
-        # Page routing
-        if st.session_state.page == "intake_form":
-            logger.info("Showing intake form")
-            show_intake_form(st.session_state.user_data)
-        elif st.session_state.page == "dashboard":
-            logger.info("Showing dashboard")
+        # Add debug info
+        logger.info(f"User type: {st.session_state.user_type}")
+        logger.info(f"User data: {st.session_state.user_data}")
+        
+        # Route based on user type
+        if st.session_state.user_type == UserType.ADMIN.value:
+            logger.info("Showing admin dashboard")
+            show_admin_dashboard(st.session_state.user_data)
+        else:
+            logger.info("Showing client dashboard")
             show_client_dashboard(st.session_state.user_data)
 
 def show_auth_page():
-    """Show login/signup page"""
+    """Handle user authentication"""
     st.title("Welcome to NextPhase Insights")
     
     user_service = UserService()
@@ -55,13 +54,19 @@ def show_auth_page():
             
             if st.form_submit_button("Login"):
                 try:
-                    user_data = user_service.sign_in_user(email, password)
-                    if user_data:
+                    success, user_data = user_service.authenticate(email, password)
+                    
+                    if success and user_data:
                         st.session_state.authenticated = True
                         st.session_state.user_data = user_data
+                        st.session_state.user_type = user_data.get('user_type')
                         st.rerun()
+                    else:
+                        st.error("Invalid credentials")
+                        
                 except Exception as e:
-                    st.error("Invalid credentials")
+                    logger.error(f"Authentication error: {str(e)}")
+                    st.error("Authentication failed")
 
     with tab2:
         with st.form("signup_form"):

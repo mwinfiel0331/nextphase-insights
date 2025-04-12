@@ -2,6 +2,27 @@
 
 All notable changes to NextPhase Insights will be documented in this file.
 
+## [1.2.1] - 2025-04-12
+
+### Added
+- Dashboard metrics for user and intake tracking
+- User status toggle functionality
+- Intake review system
+- Safe field access with fallbacks
+- Enhanced error logging and display
+
+### Changed
+- Improved admin dashboard interface
+- Enhanced user management display
+- Updated intake review process
+- Modified data retrieval with safety checks
+
+### Fixed
+- User data retrieval and display issues
+- Intake form field access errors
+- Dashboard metrics calculation
+- Status toggle persistence
+
 ## [1.2.0] - 2025-04-12
 
 ### Added
@@ -54,6 +75,7 @@ All notable changes to NextPhase Insights will be documented in this file.
 - Firestore security rules
 - Basic data visualization
 
+[1.2.1]: https://github.com/yourusername/nextphase-insights/releases/tag/v1.2.1
 [1.2.0]: https://github.com/yourusername/nextphase-insights/releases/tag/v1.2.0
 [1.1.0]: https://github.com/yourusername/nextphase-insights/releases/tag/v1.1.0
 [1.0.0]: https://github.com/yourusername/nextphase-insights/releases/tag/v1.0.0

@@ -184,6 +184,30 @@ class IntakeService:
             logger.error(f"Error fetching user intakes: {str(e)}")
             return []
 
+    def get_all_intakes(self) -> list:
+        """Get all intake forms from Firestore"""
+        try:
+            intakes = []
+            intakes_ref = self.db.collection(self.collection)
+            docs = intakes_ref.stream()
+            
+            for doc in docs:
+                intake_data = doc.to_dict()
+                # Add document ID if not present
+                if 'id' not in intake_data:
+                    intake_data['id'] = doc.id
+                # Ensure created_at exists
+                if 'created_at' not in intake_data:
+                    intake_data['created_at'] = datetime.now()
+                intakes.append(intake_data)
+            
+            logger.info(f"Retrieved {len(intakes)} intakes")
+            return intakes
+            
+        except Exception as e:
+            logger.error(f"Error listing intakes: {str(e)}")
+            return []
+
 def save_intake_form(user_id: str, form_data: dict, status: str = 'DRAFT') -> str:
     """Save intake form data to Firestore"""
     try:

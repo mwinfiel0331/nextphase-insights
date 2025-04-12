@@ -1,9 +1,50 @@
 import streamlit as st
+from datetime import datetime
+from firebase_admin import firestore
 from ..services.intake_service import IntakeService
 from ..services.user_service import UserService
+from ..utils.constants import UserType
 import logging
 
 logger = logging.getLogger(__name__)
+
+def load_dashboard_metrics() -> dict:
+    """Load metrics for admin dashboard"""
+    try:
+        db = firestore.client()
+        metrics = {}
+
+        # Get all users
+        users_ref = db.collection('users')
+        users = [doc.to_dict() for doc in users_ref.stream()]
+        
+        # Calculate user metrics
+        metrics['total_users'] = len(users)
+        metrics['active_users'] = sum(1 for user in users if user.get('is_active', True))
+        metrics['admin_users'] = sum(1 for user in users if user.get('user_type') == UserType.ADMIN.value)
+        
+        # Get all intakes
+        intakes_ref = db.collection('intakes')
+        intakes = [doc.to_dict() for doc in intakes_ref.stream()]
+        
+        # Calculate intake metrics
+        metrics['total_intakes'] = len(intakes)
+        metrics['pending_intakes'] = sum(1 for intake in intakes if intake.get('status') == 'SUBMITTED')
+        metrics['completed_intakes'] = sum(1 for intake in intakes if intake.get('status') == 'COMPLETED')
+
+        logger.info(f"Loaded dashboard metrics: {metrics}")
+        return metrics
+
+    except Exception as e:
+        logger.error(f"Error loading dashboard metrics: {str(e)}")
+        return {
+            'total_users': 0,
+            'active_users': 0,
+            'admin_users': 0,
+            'total_intakes': 0,
+            'pending_intakes': 0,
+            'completed_intakes': 0
+        }
 
 def show_admin_dashboard(user_data: dict):
     """Admin dashboard for managing users and viewing all intakes"""
@@ -24,44 +65,91 @@ def show_admin_dashboard(user_data: dict):
     # Main content tabs
     tab1, tab2, tab3 = st.tabs(["📊 Overview", "👥 Users", "📝 Intakes"])
     
+    # Overview Tab
     with tab1:
         col1, col2, col3 = st.columns(3)
         try:
-            users = user_service.list_users()
-            intakes = intake_service.get_all_intakes()
+            metrics = load_dashboard_metrics()
             
             with col1:
-                st.metric("Total Users", len(users))
+                st.metric("Total Users", metrics['total_users'])
+                st.metric("Active Users", metrics['active_users'])
             with col2:
-                st.metric("Total Intakes", len(intakes))
+                st.metric("Total Intakes", metrics['total_intakes'])
+                st.metric("Pending Review", metrics['pending_intakes'])
             with col3:
-                active = sum(1 for i in intakes if i['status'] == 'active')
-                st.metric("Active Processes", active)
+                st.metric("Admin Users", metrics['admin_users'])
+                st.metric("Completed Intakes", metrics['completed_intakes'])
+                
         except Exception as e:
             logger.error(f"Error loading metrics: {e}")
             st.error("Failed to load dashboard metrics")
     
+    # Users Tab
     with tab2:
         st.subheader("User Management")
-        for user in users:
-            if not user.get('is_admin'):  # Skip other admins
-                with st.expander(f"👤 {user['company_name']} - {user['full_name']}", expanded=False):
+        try:
+            users = user_service.list_users()
+            if not users:
+                st.info("No users found")
+                return
+                
+            for user in users:
+                # Skip own admin account
+                if user.get('email') == user_data['email']:
+                    continue
+                
+                # Use document ID or fallback to email as key
+                user_key = user.get('uid', user.get('email', 'unknown'))
+                    
+                with st.expander(f"👤 {user.get('company_name', 'N/A')} - {user.get('full_name', 'N/A')}", expanded=False):
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.write(f"**Email:** {user['email']}")
+                        st.write(f"**Email:** {user.get('email', 'N/A')}")
                         st.write(f"**Created:** {user['created_at'].strftime('%Y-%m-%d')}")
+                        st.write(f"**Type:** {user.get('user_type', 'CLIENT')}")
+                        st.write(f"**Status:** {'🟢 Active' if user.get('is_active', True) else '🔴 Inactive'}")
                     with col2:
-                        if st.button("View Intakes", key=f"view_{user['uid']}"):
-                            st.session_state.selected_user = user['uid']
+                        if st.button("View Intakes", key=f"view_{user_key}"):
+                            st.session_state.selected_user = user_key
                             st.rerun()
+                        if st.button("Toggle Status", key=f"toggle_{user_key}"):
+                            new_status = not user.get('is_active', True)
+                            user_service.update_user_profile(user_key, {'is_active': new_status})
+                            st.rerun()
+        except Exception as e:
+            logger.error(f"Error loading users: {str(e)}")
+            st.error("Failed to load users")
+            st.exception(e)  # Show detailed error in debug mode
     
+    # Intakes Tab
     with tab3:
         st.subheader("All Process Intakes")
-        for intake in intakes:
-            with st.expander(f"📝 {intake['company_name']} - {intake['created_at'].strftime('%Y-%m-%d')}"):
-                st.write(f"**Status:** {intake['status'].title()}")
-                st.write(f"**Industry:** {intake['industry']}")
-                if st.button("Review", key=f"review_{intake['id']}"):
-                    st.session_state.current_intake = intake
-                    st.session_state.show_analysis = True
-                    st.rerun()
+        try:
+            intakes = intake_service.get_all_intakes()
+            if not intakes:
+                st.info("No intake forms submitted yet")
+                return
+
+            for intake in intakes:
+                # Create display title with fallbacks
+                company = intake.get('company_name', 'Unknown Company')
+                created = intake.get('created_at', datetime.now()).strftime('%Y-%m-%d')
+                
+                with st.expander(f"📝 {company} - {created}"):
+                    st.write(f"**Status:** {intake.get('status', 'Unknown').title()}")
+                    st.write(f"**Industry:** {intake.get('industry', 'N/A')}")
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.write(f"**Contact:** {intake.get('contact_name', 'N/A')}")
+                        st.write(f"**Email:** {intake.get('contact_email', 'N/A')}")
+                    
+                    with col2:
+                        if st.button("Review", key=f"review_{intake['id']}"):
+                            st.session_state.current_intake = intake
+                            st.session_state.show_analysis = True
+                            st.rerun()
+        except Exception as e:
+            logger.error(f"Error loading intakes: {e}")
+            st.error("Failed to load intakes")

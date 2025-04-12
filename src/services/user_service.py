@@ -2,7 +2,7 @@ import firebase_admin
 from firebase_admin import auth, firestore
 import logging
 from datetime import datetime
-from typing import Optional, Dict
+from typing import Optional, Dict, Tuple
 from ..utils.constants import UserType
 
 logger = logging.getLogger(__name__)
@@ -15,20 +15,39 @@ class UserService:
         self.db = firestore.client()
         self.collection = 'users'
 
+    def authenticate(self, email: str, password: str) -> Tuple[bool, Optional[Dict]]:
+        """Authenticate user and return profile data"""
+        try:
+            # Get Firebase user by exact email match
+            user = auth.get_user_by_email(email)
+            logger.info(f"Firebase auth successful for: {email}")
+            
+            # Get Firestore profile with exact email match
+            query = self.db.collection(self.collection).where('email', '==', email).limit(1)
+            docs = [doc for doc in query.stream()]
+            
+            if not docs:
+                logger.error(f"No Firestore profile found for email: {email}")
+                return False, None
+                
+            user_data = docs[0].to_dict()
+            logger.info(f"Found user profile: {user_data}")
+            
+            # Verify emails match exactly
+            if user_data.get('email') != email:
+                logger.error(f"Email mismatch - Auth: {email}, Profile: {user_data.get('email')}")
+                return False, None
+
+            # Update last login
+            self.update_user_profile(user.uid, {'last_login': datetime.now()})
+            return True, user_data
+
+        except Exception as e:
+            logger.error(f"Authentication failed for {email}: {str(e)}")
+            return False, None
+
     def create_user(self, email: str, password: str, user_data: dict) -> Dict:
-        """Create a new user account with Firebase Auth and Firestore profile
-        
-        Args:
-            email (str): User's email address
-            password (str): User's password
-            user_data (dict): Additional user information
-            
-        Returns:
-            Dict: Created user profile data
-            
-        Raises:
-            Exception: If user creation fails
-        """
+        """Create a new user account with Firebase Auth and Firestore profile"""
         try:
             # Create Firebase Auth user
             user = auth.create_user(
@@ -40,16 +59,17 @@ class UserService:
             # Generate client_id from company name
             client_id = user_data.get('company_name', '').lower().replace(' ', '_')
             
-            # Create user profile with type
+            # Create user profile
             user_profile = {
                 'uid': user.uid,
                 'email': email,
                 'company_name': user_data.get('company_name'),
                 'full_name': user_data.get('full_name'),
-                'user_type': UserType.CLIENT.value,  # Default to CLIENT
+                'user_type': user_data.get('user_type', UserType.CLIENT.value),
                 'client_id': client_id,
                 'created_at': datetime.now(),
-                'last_login': datetime.now()
+                'last_login': datetime.now(),
+                'is_active': True
             }
             
             # Save to Firestore
@@ -62,53 +82,8 @@ class UserService:
             logger.error(f"Error creating user {email}: {str(e)}")
             raise
 
-    def sign_in_user(self, email: str, password: str) -> Optional[Dict]:
-        """Sign in existing user and update last login
-        
-        Args:
-            email (str): User's email address
-            password (str): User's password
-            
-        Returns:
-            Optional[Dict]: User profile data if successful, None if not found
-            
-        Raises:
-            Exception: If sign in fails
-        """
-        try:
-            # Get Firebase user
-            user = auth.get_user_by_email(email)
-            
-            # Get and update profile
-            profile_ref = self.db.collection(self.collection).document(user.uid)
-            profile = profile_ref.get()
-            
-            if profile.exists:
-                # Update last login
-                profile_ref.update({
-                    'last_login': datetime.now()
-                })
-                
-                user_data = profile.to_dict()
-                logger.info(f"User signed in: {email}")
-                return user_data
-                
-            logger.error(f"No profile found for user: {email}")
-            return None
-            
-        except Exception as e:
-            logger.error(f"Error signing in user {email}: {str(e)}")
-            raise
-
     def get_user_by_id(self, user_id: str) -> Optional[Dict]:
-        """Retrieve user profile by ID
-        
-        Args:
-            user_id (str): User's UID
-            
-        Returns:
-            Optional[Dict]: User profile data if found
-        """
+        """Retrieve user profile by ID"""
         try:
             doc = self.db.collection(self.collection).document(user_id).get()
             return doc.to_dict() if doc.exists else None
@@ -116,16 +91,22 @@ class UserService:
             logger.error(f"Error retrieving user {user_id}: {str(e)}")
             return None
 
-    def update_user_profile(self, user_id: str, profile_data: Dict) -> bool:
-        """Update user profile data
-        
-        Args:
-            user_id (str): User's UID
-            profile_data (Dict): Updated profile information
+    def get_user_by_email(self, email: str) -> Optional[Dict]:
+        """Retrieve user profile by email"""
+        try:
+            query = self.db.collection(self.collection).where('email', '==', email).limit(1)
+            docs = query.stream()
             
-        Returns:
-            bool: True if successful, False otherwise
-        """
+            for doc in docs:
+                return doc.to_dict()
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error retrieving user by email {email}: {str(e)}")
+            return None
+
+    def update_user_profile(self, user_id: str, profile_data: Dict) -> bool:
+        """Update user profile data"""
         try:
             profile_data['updated_at'] = datetime.now()
             self.db.collection(self.collection).document(user_id).update(profile_data)
@@ -136,15 +117,7 @@ class UserService:
             return False
 
     def set_user_type(self, user_id: str, user_type: UserType) -> bool:
-        """Update user type (admin only)
-        
-        Args:
-            user_id (str): User's UID
-            user_type (UserType): New user type
-            
-        Returns:
-            bool: True if successful, False otherwise
-        """
+        """Update user type (admin only)"""
         try:
             self.db.collection(self.collection).document(user_id).update({
                 'user_type': user_type.value,
@@ -155,3 +128,40 @@ class UserService:
         except Exception as e:
             logger.error(f"Error updating user type: {str(e)}")
             return False
+
+    def deactivate_user(self, user_id: str) -> bool:
+        """Deactivate a user account"""
+        try:
+            self.db.collection(self.collection).document(user_id).update({
+                'is_active': False,
+                'updated_at': datetime.now()
+            })
+            logger.info(f"Deactivated user: {user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error deactivating user {user_id}: {str(e)}")
+            return False
+
+    def list_users(self) -> list:
+        """Get all users from Firestore"""
+        try:
+            users = []
+            users_ref = self.db.collection(self.collection)
+            docs = users_ref.stream()
+            
+            for doc in docs:
+                user_data = doc.to_dict()
+                # Add document ID as uid if not present
+                if 'uid' not in user_data:
+                    user_data['uid'] = doc.id
+                # Ensure created_at exists
+                if 'created_at' not in user_data:
+                    user_data['created_at'] = datetime.now()
+                users.append(user_data)
+                
+            logger.info(f"Retrieved {len(users)} users")
+            return users
+            
+        except Exception as e:
+            logger.error(f"Error listing users: {str(e)}")
+            return []

@@ -1,16 +1,20 @@
 # NextPhase Insights
 
-AI-powered process optimization and automation analysis platform built with Streamlit, Firebase, and OpenAI.
+Process optimization and workflow management platform.
 
 ## 🚀 Features
 
-- 🤖 AI-powered process analysis
-- 📊 Automation potential scoring
-- 💾 Intelligent caching system
-- 🔄 Process optimization recommendations
-- 📝 Client intake management
-- 📈 Data visualization
-- 🔐 Secure data storage
+### Admin Dashboard
+- User management with status control
+- Process intake review system
+- Real-time metrics and analytics
+- Workflow status tracking
+
+### Client Intake System
+- Multi-step intake form with progress tracking
+- Tool and system assessment
+- Process documentation upload
+- Draft saving and review capabilities
 
 ## 📋 Prerequisites
 
@@ -19,7 +23,7 @@ AI-powered process optimization and automation analysis platform built with Stre
 - Firebase account
 - Git
 
-## ⚡ Quick Start
+## 🛠️ Setup and Installation
 
 ## Clone and setup:
 ```powershell
@@ -69,12 +73,38 @@ This will:
 - Set up query optimization
 - Enable sorting and filtering
 
+## 📊 Dashboard Access
+
+### Admin Dashboard
+Access the admin dashboard by logging in with admin credentials:
+```powershell
+streamlit run app.py
+```
+
+Admin features include:
+- User management
+- Intake form review
+- Process analysis
+- System metrics
+
+### Client Dashboard
+Regular users will see:
+- Intake form submission
+- Process status tracking
+- Documentation management
+
 ## Running the Application
 
 Start the Streamlit server:
 
 ```powershell
 streamlit run app.py
+```
+
+## 🐛 Bug Reporting
+Submit bugs using GitHub CLI:
+```powershell
+gh issue create -F .github/ISSUE_TEMPLATE/bug.md --label "bug"
 ```
 
 ## 🔧 Usage
@@ -143,8 +173,10 @@ nextphase-insights/
 - Rate limiting implementation
 - Secure data validation
 
-## 📚 Documentation
-
+## 📝 Documentation
+- [Changelog](CHANGELOG.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
 - [OpenAI API Docs](https://platform.openai.com/docs)
 - [Firebase Docs](https://firebase.google.com/docs)
 - [Streamlit Docs](https://docs.streamlit.io/)
@@ -156,6 +188,13 @@ nextphase-insights/
 3. Commit changes (`git commit -m 'Add amazing feature'`)
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+### Reporting Issues
+Please check the [Known Issues](BUGS.md) document before reporting new bugs. For new issues, use the GitHub Issues template and include:
+- Steps to reproduce
+- Expected behavior
+- Actual behavior
+- Impact assessment
 
 ## 📝 License
 
