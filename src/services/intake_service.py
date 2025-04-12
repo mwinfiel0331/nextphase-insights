@@ -12,6 +12,38 @@ class IntakeService:
         self.db = firestore.client()
         self.collection = 'intakes'
 
+    def save_intake(self, user_id: str, form_data: dict, status: str = 'SUBMITTED') -> str:
+        """Save intake form data to Firestore
+        
+        Args:
+            user_id (str): User ID submitting the form
+            form_data (dict): Form data to save
+            status (str): Status of the intake (DRAFT or SUBMITTED)
+            
+        Returns:
+            str: Document ID of the saved intake
+        """
+        try:
+            # Prepare intake document
+            intake_data = {
+                'user_id': user_id,
+                'status': status,
+                'created_at': datetime.now(),
+                'updated_at': datetime.now(),
+                **form_data
+            }
+            
+            # Create or update intake document
+            doc_ref = self.db.collection(self.collection).document()
+            doc_ref.set(intake_data)
+            
+            logger.info(f"Saved intake form with ID: {doc_ref.id}")
+            return doc_ref.id
+            
+        except Exception as e:
+            logger.error(f"Error saving intake: {str(e)}")
+            raise
+
     def save_intake_data(self, data: Dict[str, Any]) -> str:
         """Save complete intake form data to Firestore
         
