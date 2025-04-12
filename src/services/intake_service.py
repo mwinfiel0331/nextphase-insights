@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class IntakeService:
-    """Service for managing process intake forms"""
+    """Service for managing client intake forms"""
     
     def __init__(self):
         self.db = firestore.client()
@@ -109,20 +109,19 @@ class IntakeService:
         except Exception as e:
             raise Exception(f"Failed to update intake section: {str(e)}")
 
-    def get_intake_by_id(self, intake_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve complete intake data by ID
-        
-        Args:
-            intake_id (str): Firestore document ID
-            
-        Returns:
-            Optional[Dict[str, Any]]: Complete intake data or None if not found
-        """
+    def get_intake_by_id(self, intake_id: str) -> Optional[Dict]:
+        """Get specific intake by ID"""
         try:
             doc = self.db.collection(self.collection).document(intake_id).get()
-            return doc.to_dict() if doc.exists else None
+            if doc.exists:
+                data = doc.to_dict()
+                data['id'] = doc.id
+                return data
+            return None
+            
         except Exception as e:
-            raise Exception(f"Failed to retrieve intake data: {str(e)}")
+            logger.error(f"Error fetching intake {intake_id}: {str(e)}")
+            return None
 
     def list_intakes(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Retrieve recent intake submissions
@@ -163,26 +162,59 @@ class IntakeService:
         except Exception as e:
             raise Exception(f"Failed to update documentation: {str(e)}")
 
-    def get_user_intakes(self, user_id: str) -> list:
-        """Get all intakes for a specific user"""
+    def get_user_intakes(self, client_id: str) -> List[Dict]:
+        """Get all intakes for a specific user
+        
+        Args:
+            client_id (str): User's email address
+            
+        Returns:
+            List[Dict]: List of intake documents
+        """
         try:
-            # Use filter keyword argument for query
-            query = (self.db.collection(self.collection)
-                    .filter('user_id', '==', user_id)
-                    .order_by('created_at', direction=firestore.Query.DESCENDING))
-            
             intakes = []
-            for doc in query.stream():
-                intake_data = doc.to_dict()
-                intake_data['id'] = doc.id
-                intakes.append(intake_data)
+            # Use where() instead of filter()
+            query = self.db.collection(self.collection).where('client_id', '==', client_id)
+            docs = query.stream()
             
-            logger.debug(f"Retrieved {len(intakes)} intakes for user {user_id}")
+            for doc in docs:
+                intake_data = doc.to_dict()
+                intake_data['id'] = doc.id  # Add document ID
+                intakes.append(intake_data)
+                
+            logger.info(f"Retrieved {len(intakes)} intakes for client: {client_id}")
             return intakes
             
         except Exception as e:
             logger.error(f"Error fetching user intakes: {str(e)}")
             return []
+
+    def get_client_intake(self, client_id: str) -> Optional[Dict]:
+        """Get single intake for a client or None if doesn't exist
+        
+        Args:
+            client_id (str): User's email address
+            
+        Returns:
+            Optional[Dict]: Intake document if exists, None otherwise
+        """
+        try:
+            # Query for client's intake
+            query = self.db.collection(self.collection).where('client_id', '==', client_id).limit(1)
+            docs = list(query.stream())
+            
+            if docs:
+                intake_data = docs[0].to_dict()
+                intake_data['id'] = docs[0].id
+                logger.info(f"Retrieved existing intake for client: {client_id}")
+                return intake_data
+                
+            logger.info(f"No existing intake found for client: {client_id}")
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error checking client intake: {str(e)}")
+            return None
 
     def get_all_intakes(self) -> list:
         """Get all intake forms from Firestore"""

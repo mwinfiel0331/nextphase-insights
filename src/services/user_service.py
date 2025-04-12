@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 from typing import Optional, Dict, Tuple
 from ..utils.constants import UserType
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -165,3 +166,38 @@ class UserService:
         except Exception as e:
             logger.error(f"Error listing users: {str(e)}")
             return []
+
+    def send_password_reset(self, email: str) -> bool:
+        """Send password reset email using Firebase Auth"""
+        try:
+            logger.debug(f"Attempting password reset for email: {email}")
+            
+            # First verify user exists
+            try:
+                user = auth.get_user_by_email(email)
+                logger.debug(f"User found in Firebase: {user.uid}")
+            except auth.UserNotFoundError:
+                logger.warning(f"Password reset attempted for non-existent user: {email}")
+                return False
+                
+            # Generate reset link with proper URL format
+            auth_domain = os.getenv('FIREBASE_AUTH_DOMAIN', '')
+            reset_url = f"https://{auth_domain}"
+            
+            logger.debug(f"Using reset URL: {reset_url}")
+            
+            reset_link = auth.generate_password_reset_link(
+                email,
+                action_code_settings=auth.ActionCodeSettings(
+                    url=reset_url,
+                    handle_code_in_app=True
+                )
+            )
+            
+            logger.debug(f"Reset link generated: {reset_link}")
+            logger.info(f"Password reset link sent to: {email}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error in password reset: {str(e)}", exc_info=True)
+            return False
