@@ -2,8 +2,10 @@ import streamlit as st
 from datetime import datetime
 import pandas as pd
 import logging
+from ..components.process_details import show_process_details_section
 
-from src.models.process_step import Process, ProcessStep
+
+from src.models.process_section import Process, ProcessStep
 from ..services.intake_service import IntakeService
 from ..utils.validators import validate_client_data
 from google.cloud import firestore
@@ -45,7 +47,9 @@ def show_intake_form(user_data: dict):
         if current_section == 0:
             show_company_info(user_data)
         elif current_section == 1:
-            show_process_details()
+            show_process_assessment()
+        elif current_section == 2:
+            show_process_dets() 
         elif current_section == 2:
             show_documentation()
         else:
@@ -135,154 +139,6 @@ def show_company_info(user_data: dict):
             help="Job title or role in the company"
         )
 
-def show_process_details():
-    st.subheader("Process Assessment")
-    
-    # Business Overview
-    st.markdown("### Business Overview")
-    business_description = st.text_area(
-        "Business Description*",
-        placeholder="Briefly describe your business and its primary operations",
-        help="Provide a high-level overview of your business activities"
-    )
-    
-    # Challenges and Goals
-    st.markdown("### Challenges and Goals")
-    current_challenges = st.text_area(
-        "Current Workflow Challenges*",
-        placeholder="What are the main challenges you're facing with your current workflows?"
-    )
-    
-    main_pain_point = st.text_area(
-        "Primary Pain Point*",
-        placeholder="Describe your biggest pain point in more detail"
-    )
-    
-    partnership_goals = st.text_area(
-        "Partnership Goals*",
-        placeholder="What do you hope to achieve as a result of our partnership?"
-    )
-
-    # Current Tools Assessment
-    st.markdown("### Current Tools & Systems")
-    
-    tool_categories = {
-        "Communication & Messaging": [
-            "Slack",
-            "Microsoft Teams",
-            "Discord",
-            "Zoom",
-            "Google Meet",
-            "Other"
-        ],
-        "Task & Project Management": [
-            "Asana",
-            "Trello",
-            "Jira",
-            "Monday.com",
-            "ClickUp",
-            "Other"
-        ],
-        "Calendar & Scheduling": [
-            "Google Calendar",
-            "Outlook",
-            "Calendly",
-            "Other"
-        ],
-        "Productivity": [
-            "Microsoft Office",
-            "Google Workspace",
-            "Notion",
-            "Evernote",
-            "Other"
-        ],
-        "CRM": [
-            "Salesforce",
-            "HubSpot",
-            "Zoho",
-            "None",
-            "Other"
-        ],
-        "E-commerce & Payments": [
-            "Shopify",
-            "WooCommerce",
-            "Stripe",
-            "PayPal",
-            "Square",
-            "None",
-            "Other"
-        ],
-        "Data & Analytics": [
-            "Google Analytics",
-            "Tableau",
-            "Power BI",
-            "None",
-            "Other"
-        ],
-        "Social Media Management": [
-            "Hootsuite",
-            "Buffer",
-            "Later",
-            "None",
-            "Other"
-        ],
-        "Cloud Services": [
-            "AWS",
-            "Google Cloud",
-            "Azure",
-            "Dropbox",
-            "None",
-            "Other"
-        ],
-        "Marketing & Advertising": [
-            "Google Ads",
-            "Meta Ads",
-            "Mailchimp",
-            "None",
-            "Other"
-        ],
-        "Automation & Workflow": [
-            "Zapier",
-            "Make (Integromat)",
-            "Power Automate",
-            "None",
-            "Other"
-        ],
-        "Customer Support": [
-            "Zendesk",
-            "Intercom",
-            "Freshdesk",
-            "None",
-            "Other"
-        ]
-    }
-
-    # Create columns for tool selection
-    st.markdown("### Tool Assessment")
-    st.caption("Select the tools and systems currently in use")
-    
-    tool_selections = {}
-    for category, tools in tool_categories.items():
-        st.markdown(f"**{category}**")
-        tool_selections[category] = st.multiselect(
-            f"Select {category} tools",
-            options=tools,
-            key=f"tools_{category.lower().replace(' ', '_')}"
-        )
-        
-        # If "Other" is selected, show text input
-        if "Other" in tool_selections[category]:
-            other_tool = st.text_input(
-                f"Please specify other {category} tools",
-                key=f"other_{category.lower().replace(' ', '_')}"
-            )
-            if other_tool:
-                tool_selections[category].append(other_tool)
-
-    # Additional Details
-    st.markdown("### Process Details")
-    process_details()
-    
 
 
     # Store data in session state
@@ -426,3 +282,155 @@ def show_step_details(step: ProcessStep):
         
         if step.screenshot:
             st.image(step.screenshot, caption="Step Screenshot")
+
+
+def show_process_assessment():
+    st.subheader("Process Assessment")
+    
+    # Business Overview
+    st.markdown("### Business Overview")
+    business_description = st.text_area(
+        "Business Description*",
+        placeholder="Briefly describe your business and its primary operations",
+        help="Provide a high-level overview of your business activities"
+    )
+    
+    # Challenges and Goals
+    st.markdown("### Challenges and Goals")
+    current_challenges = st.text_area(
+        "Current Workflow Challenges*",
+        placeholder="What are the main challenges you're facing with your current workflows?"
+    )
+    
+    main_pain_point = st.text_area(
+        "Primary Pain Point*",
+        placeholder="Describe your biggest pain point in more detail"
+    )
+    
+    partnership_goals = st.text_area(
+        "Partnership Goals*",
+        placeholder="What do you hope to achieve as a result of our partnership?"
+    )
+
+    # Current Tools Assessment
+    st.markdown("### Current Tools & Systems")
+    
+    tool_categories = {
+        "Communication & Messaging": [
+            "Slack",
+            "Microsoft Teams",
+            "Discord",
+            "Zoom",
+            "Google Meet",
+            "Other"
+        ],
+        "Task & Project Management": [
+            "Asana",
+            "Trello",
+            "Jira",
+            "Monday.com",
+            "ClickUp",
+            "Other"
+        ],
+        "Calendar & Scheduling": [
+            "Google Calendar",
+            "Outlook",
+            "Calendly",
+            "Other"
+        ],
+        "Productivity": [
+            "Microsoft Office",
+            "Google Workspace",
+            "Notion",
+            "Evernote",
+            "Other"
+        ],
+        "CRM": [
+            "Salesforce",
+            "HubSpot",
+            "Zoho",
+            "None",
+            "Other"
+        ],
+        "E-commerce & Payments": [
+            "Shopify",
+            "WooCommerce",
+            "Stripe",
+            "PayPal",
+            "Square",
+            "None",
+            "Other"
+        ],
+        "Data & Analytics": [
+            "Google Analytics",
+            "Tableau",
+            "Power BI",
+            "None",
+            "Other"
+        ],
+        "Social Media Management": [
+            "Hootsuite",
+            "Buffer",
+            "Later",
+            "None",
+            "Other"
+        ],
+        "Cloud Services": [
+            "AWS",
+            "Google Cloud",
+            "Azure",
+            "Dropbox",
+            "None",
+            "Other"
+        ],
+        "Marketing & Advertising": [
+            "Google Ads",
+            "Meta Ads",
+            "Mailchimp",
+            "None",
+            "Other"
+        ],
+        "Automation & Workflow": [
+            "Zapier",
+            "Make (Integromat)",
+            "Power Automate",
+            "None",
+            "Other"
+        ],
+        "Customer Support": [
+            "Zendesk",
+            "Intercom",
+            "Freshdesk",
+            "None",
+            "Other"
+        ]
+    }
+
+    # Create columns for tool selection
+    st.markdown("### Tool Assessment")
+    st.caption("Select the tools and systems currently in use")
+    
+    tool_selections = {}
+    for category, tools in tool_categories.items():
+        st.markdown(f"**{category}**")
+        tool_selections[category] = st.multiselect(
+            f"Select {category} tools",
+            options=tools,
+            key=f"tools_{category.lower().replace(' ', '_')}"
+        )
+        
+        # If "Other" is selected, show text input
+        if "Other" in tool_selections[category]:
+            other_tool = st.text_input(
+                f"Please specify other {category} tools",
+                key=f"other_{category.lower().replace(' ', '_')}"
+            )
+            if other_tool:
+                tool_selections[category].append(other_tool)
+
+
+
+def show_process_details():
+    """Show process details section"""
+    show_process_details_section(st.session_state.get('processes', []))
+    
