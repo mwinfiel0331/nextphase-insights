@@ -1,6 +1,24 @@
 # NextPhase Insights
 
-Process optimization and workflow management platform.
+## Version 1.3.0
+
+### Features
+- Complete company information intake
+- Dynamic form validation
+- Session state management
+- Responsive two-column layout
+
+### Requirements
+- Python 3.8+
+- Streamlit 1.10+
+- Firebase Admin SDK
+- Logging configuration
+
+### Setup
+1. Clone the repository
+2. Install dependencies: `pip install -r requirements.txt`
+3. Configure environment variables
+4. Run: `streamlit run app.py`
 
 ## 🚀 Features
 

@@ -2,6 +2,29 @@
 
 All notable changes to NextPhase Insights will be documented in this file.
 
+## [1.3.0] - 2025-04-13
+
+### Added
+- Company information form with validation
+- Session state management for form data
+- Two-column layout for company and contact details
+- Industry selection dropdown
+- Company size slider
+- Required field indicators
+- Help text for form fields
+- Debug logging for form submissions
+
+### Changed
+- Improved form field organization
+- Enhanced data persistence in session state
+- Updated industry options list
+- Optimized form validation logic
+
+### Fixed
+- Session state initialization issues
+- Form data persistence bugs
+- Field validation feedback
+
 ## [1.2.1] - 2025-04-12
 
 ### Added
@@ -75,6 +98,7 @@ All notable changes to NextPhase Insights will be documented in this file.
 - Firestore security rules
 - Basic data visualization
 
+[1.3.0]: https://github.com/yourusername/nextphase-insights/releases/tag/v1.3.0
 [1.2.1]: https://github.com/yourusername/nextphase-insights/releases/tag/v1.2.1
 [1.2.0]: https://github.com/yourusername/nextphase-insights/releases/tag/v1.2.0
 [1.1.0]: https://github.com/yourusername/nextphase-insights/releases/tag/v1.1.0
