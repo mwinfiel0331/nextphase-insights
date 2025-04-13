@@ -1,20 +1,20 @@
-[BUG] Admin - not showing admin dashboard
+[BUG] Forgot Password
 
 **Description**
-When logging in as as admin (melissa.bolcar@gmail.com), the portal admindashboard.py should be displayed,  but it is not.
+Does not send email when clicking the forgot password link.
 
 **To Reproduce**
 1. Execute streamlit run app.py
-2. Enter credentials for melissa.bolcar@gmail.com
+2. Click forgot password
 
 **Expected Behavior**
-Admin portal should be displayed
+Link shoudl be sent to email.
 
 **Current Behavior**
-- It asks me to create a client intake form
+It does nothing
 
 **Impact**
 High: Blocks core functionality
 
 **Additional Context**
-- File: src/pages/admindashboard.py
+- File: src/pages/clientdashboard.py

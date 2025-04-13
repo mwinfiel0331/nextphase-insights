@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 from typing import Optional, Dict, Tuple
 from ..utils.constants import UserType
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -165,3 +166,47 @@ class UserService:
         except Exception as e:
             logger.error(f"Error listing users: {str(e)}")
             return []
+
+    def send_password_reset(self, email: str) -> bool:
+        """Send password reset email using Firebase Auth"""
+        try:
+            logger.debug(f"Attempting password reset for email: {email}")
+            
+            # First verify user exists
+            try:
+                user = auth.get_user_by_email(email)
+                logger.debug(f"User found in Firebase: {user.uid}")
+            except auth.UserNotFoundError:
+                logger.warning(f"Password reset attempted for non-existent user: {email}")
+                return False
+            
+            # Get Firebase configuration from environment
+            auth_domain = os.getenv('FIREBASE_AUTH_DOMAIN')
+            dynamic_links_domain = os.getenv('FIREBASE_DYNAMIC_LINKS_DOMAIN')
+            
+            if not auth_domain or not dynamic_links_domain:
+                logger.error("Missing Firebase configuration in environment variables")
+                return False
+            
+            # Generate reset link with complete configuration
+            action_settings = auth.ActionCodeSettings(
+                url=f"https://{auth_domain}/reset-password",
+                handle_code_in_app=True,
+                dynamic_link_domain=dynamic_links_domain
+            )
+            
+            reset_link = auth.generate_password_reset_link(
+                email,
+                action_code_settings=action_settings
+            )
+            
+            logger.debug(f"Reset link generated: {reset_link}")
+            logger.info(f"Password reset link sent to: {email}")
+            return True
+            
+        except ValueError as ve:
+            logger.error(f"Invalid URL configuration: {str(ve)}")
+            return False
+        except Exception as e:
+            logger.error(f"Error in password reset: {str(e)}", exc_info=True)
+            return False
