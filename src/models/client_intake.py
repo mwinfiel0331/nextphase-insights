@@ -5,7 +5,7 @@ from typing import Optional
 @dataclass
 class ClientIntake:
     intake_id: str
-    client_id: str
+    client_email: str
     business_description: str
     current_challenges: str
     primary_pain_point: str

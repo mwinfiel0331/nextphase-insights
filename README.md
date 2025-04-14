@@ -152,14 +152,27 @@ score = analyzer.score_automation_potential({
 ## 🧪 Testing
 
 Run tests with coverage:
-```powershell
-pytest tests/ -v --cov=src
-```
+
+# Run tests with coverage
+pytest --cov=src tests/
+
+# Generate HTML report
+pytest --cov=src --cov-report=html tests/
+
+# Open coverage report
+start htmlcov/index.html
+
 
 Generate coverage report:
 ```powershell
 pytest tests/ --cov=src --cov-report=html
 ```
+
+# Generate detailed coverage report for Code that isn't executed
+pytest --cov=src --cov-report=term-missing
+
+# Generate HTML report for better visualization (Code that isn't executed)
+pytest --cov=src --cov-report=html
 
 ## 📁 Project Structure
 
