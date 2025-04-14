@@ -1,24 +1,29 @@
 import streamlit as st
+from firebase_admin import firestore  # Add this import
 from datetime import datetime
 import pandas as pd
 import logging
 
-from src.components.business_assessment import show_business_assessment
-from src.components.company_info import show_company_info
+from src.components import client_tools_intake
+from src.components.client_intake import client_intake
+from src.components.client_info import show_client_info
 from src.components.documentation_upload import show_documentation
 from ..components.process_details import show_process_details_section
 
 
 from src.models.process_section import Process, ProcessStep
-from ..services.intake_service import IntakeService
-from ..utils.validators import validate_client_data
-from google.cloud import firestore
+from ..services.client_intake_service import ClientIntakeService
 
 logger = logging.getLogger(__name__)
 
 def show_intake_form(user_data: dict):
     """Display multi-step intake form"""
-    st.title("Process Optimization Intake Form")
+    st.title("Client Intake Form")
+    
+    # Add back button
+    if st.button("← Back to Dashboard"):
+        st.session_state.show_intake_form = False
+        st.rerun()
     
     # Initialize form data in session state if not exists
     if 'form_data' not in st.session_state:
@@ -43,18 +48,21 @@ def show_intake_form(user_data: dict):
     progress_bar.progress((current_section + 1) / len(progress_sections))
     st.caption(f"Section {current_section + 1} of {len(progress_sections)}: {progress_sections[current_section]}")
 
-    # Initialize service
-    intake_service = IntakeService()
+    # Initialize service with Firestore client
+    db = firestore.client()
+    intake_service = ClientIntakeService(db)  # Fix: Pass db instance
 
     try:
         # Show current section
         if current_section == 0:
-            show_company_info(user_data)
+            show_client_info(user_data)
         elif current_section == 1:
-            show_business_assessment()
+            client_intake()
         elif current_section == 2:
-            show_process_details_section() 
+            client_tools_intake()
         elif current_section == 3:
+            show_process_details_section() 
+        elif current_section == 4:
             show_documentation()
         else:
             st.subheader("Review & Submit")

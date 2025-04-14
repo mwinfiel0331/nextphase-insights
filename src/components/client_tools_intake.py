@@ -2,41 +2,7 @@
 import streamlit as st
 from typing import Optional, List
 import logging
-def show_business_assessment():
-    st.subheader("Business Assessment")
-    
-    # Business Overview
-    st.markdown("### Business Overview")
-    business_description = st.text_area(
-        "Business Description*",
-        placeholder="Briefly describe your business and its primary operations",
-        help="Provide a high-level overview of your business activities"
-    )
-    
-    # Challenges and Goals
-    st.markdown("### Challenges and Goals")
-    current_challenges = st.text_area(
-        "Current Workflow Challenges*",
-        placeholder="What are the main challenges you're facing with your current workflows?"
-    )
-    
-    main_pain_point = st.text_area(
-        "Primary Pain Point*",
-        placeholder="Describe your biggest pain point in more detail"
-    )
-    
-    partnership_goals = st.text_area(
-        "Partnership Goals*",
-        placeholder="""What specific outcomes are you looking to achieve through process optimization? 
-        For example:
-        - Reduce processing time by X%
-        - Automate specific manual tasks
-        - Improve accuracy and reduce errors
-        - Better visibility into process bottlenecks
-        - Integration between existing systems
-        """,
-        help="Define clear, measurable goals you'd like to achieve through our collaboration"
-    )
+def client_tools_intake():
 
     # Current Tools Assessment
     st.markdown("### Current Tools & Systems")
@@ -155,4 +121,3 @@ def show_business_assessment():
             )
             if other_tool:
                 tool_selections[category].append(other_tool)
-

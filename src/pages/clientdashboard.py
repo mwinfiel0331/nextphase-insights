@@ -1,20 +1,29 @@
 import streamlit as st
-from ..services.intake_service import IntakeService
-from .intake_form import show_intake_form
 import logging
+from firebase_admin import firestore
+from datetime import datetime
+from typing import Dict, Optional
+
+# Move service import after other standard imports
+from ..services.client_intake_service import ClientIntakeService
+from .intake_form import show_intake_form
 
 logger = logging.getLogger(__name__)
 
 def show_client_dashboard(user_data: dict):
     """Display client dashboard with intake history"""
+    st.title(f"Welcome, {user_data.get('full_name')}!")
+    
+
+    
     # Initialize page state if not exists
     if 'page' not in st.session_state:
         st.session_state.page = "dashboard"
         
-    st.title(f"Welcome, {user_data.get('full_name', 'Client')}")
-    
-    intake_service = IntakeService()
-    
+    # Initialize service with Firestore client
+    db = firestore.client()
+    intake_service = ClientIntakeService(db)  # Fix service initialization
+        
     # Check for existing intake
     existing_intake = intake_service.get_client_intake(user_data['email'])
     
@@ -29,6 +38,7 @@ def show_client_dashboard(user_data: dict):
         else:
             if st.button("➕ Create New Intake Form", use_container_width=True, key="create_intake"):
                 logger.info("Navigating to intake form")
+                st.session_state.show_intake_form = True
                 st.session_state.page = "intake_form"
                 st.session_state.show_readonly = False
                 st.rerun()

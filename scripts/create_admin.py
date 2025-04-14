@@ -14,7 +14,6 @@ sys.path.insert(0, str(root_dir))
 import click
 from firebase_admin import auth, firestore, exceptions
 from init.firebase_init import initialize_firebase
-from src.utils.constants import UserType
 from datetime import datetime
 
 @click.command()
@@ -41,15 +40,15 @@ def create_admin(email: str, full_name: str, company: str, password: str, debug:
             if click.confirm("Would you like to update this user to admin?"):
                 db = firestore.client()
                 admin_data = {
-                    'uid': existing_user.uid,
+                    'user_id': existing_user.user_id,
                     'email': email,
                     'full_name': full_name,
                     'company_name': company,
-                    'user_type': UserType.ADMIN.value,
-                    'updated_at': datetime.now(),
+                    'app_role': 'admin',
+                    'updated_at': firestore.SERVER_TIMESTAMP,
                     'is_system_admin': True
                 }
-                db.collection('users').document(existing_user.uid).set(admin_data, merge=True)
+                db.collection('users').document(existing_user.user_id).set(admin_data, merge=True)
                 click.echo(f"✅ Updated user to admin: {email}")
             return
         except auth.UserNotFoundError:
@@ -62,22 +61,22 @@ def create_admin(email: str, full_name: str, company: str, password: str, debug:
             display_name=full_name
         )
 
-        logger.info(f"Created auth user with UID: {user.uid}")
+        logger.info(f"Created auth user with user_id: {user.user_id}")
         
         admin_data = {
-            'uid': user.uid,
+            'user_id': user.user_id,
             'email': email,
             'full_name': full_name,
             'company_name': company,
-            'user_type': UserType.ADMIN.value,
-            'created_at': datetime.now(),
+            'app_role': 'admin',
+            'created_at': firestore.SERVER_TIMESTAMP,
             'last_login': datetime.now(),
             'is_system_admin': True
         }
 
         logger.info("Saving admin data to Firestore...")
         db = firestore.client()
-        db.collection('users').document(user.uid).set(admin_data)
+        db.collection('users').document(user.user_id).set(admin_data)
         
         click.echo(f"✅ Successfully created admin user: {email}")
 

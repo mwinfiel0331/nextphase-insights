@@ -1,5 +1,5 @@
 import streamlit as st
-from ...services.auth_service import create_user, sign_in_user
+from ...services.user_service import create_user, sign_in_user
 from ...services.db_service import get_industries
 
 def show_login():

@@ -1,9 +1,8 @@
 import streamlit as st
 from datetime import datetime
 from firebase_admin import firestore
-from ..services.intake_service import IntakeService
-from ..services.user_service import UserService
-from ..utils.constants import UserType
+from src.services import user_service
+from src.services.user_service import UserService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -21,16 +20,16 @@ def load_dashboard_metrics() -> dict:
         # Calculate user metrics
         metrics['total_users'] = len(users)
         metrics['active_users'] = sum(1 for user in users if user.get('is_active', True))
-        metrics['admin_users'] = sum(1 for user in users if user.get('user_type') == UserType.ADMIN.value)
+        metrics['admin_users'] = sum(1 for user in users if user.get('app_role') =='admin')
         
         # Get all intakes
-        intakes_ref = db.collection('intakes')
+        intakes_ref = db.collection('client_intakes')
         intakes = [doc.to_dict() for doc in intakes_ref.stream()]
         
         # Calculate intake metrics
         metrics['total_intakes'] = len(intakes)
-        metrics['pending_intakes'] = sum(1 for intake in intakes if intake.get('status') == 'SUBMITTED')
-        metrics['completed_intakes'] = sum(1 for intake in intakes if intake.get('status') == 'COMPLETED')
+        metrics['pending_intakes'] = sum(1 for intake in intakes if intake.get('workflow_status') == 'SUBMITTED')
+        metrics['completed_intakes'] = sum(1 for intake in intakes if intake.get('workflow_status') == 'COMPLETED')
 
         logger.info(f"Loaded dashboard metrics: {metrics}")
         return metrics
@@ -49,16 +48,13 @@ def load_dashboard_metrics() -> dict:
 def show_admin_dashboard(user_data: dict):
     """Admin dashboard for managing users and viewing all intakes"""
     st.title("🔐 Admin Dashboard")
-    
-    # Initialize services
-    intake_service = IntakeService()
-    user_service = UserService()
-    
+    st.write("Welcome to the admin dashboard. Here you can manage users and view all intakes.")
+             
     # Admin sidebar
     with st.sidebar:
         st.write(f"**Admin:** {user_data['full_name']}")
-        st.write(f"**Access Level:** Administrator")
-        if st.button("🚪 Logout", use_container_width=True):
+        st.write(f"**Access Level:** {user_data['app_role']}")
+        if st.button("🚪 Logout", use_container_width=False):
             st.session_state.clear()
             st.rerun()
     
@@ -107,7 +103,7 @@ def show_admin_dashboard(user_data: dict):
                     with col1:
                         st.write(f"**Email:** {user.get('email', 'N/A')}")
                         st.write(f"**Created:** {user['created_at'].strftime('%Y-%m-%d')}")
-                        st.write(f"**Type:** {user.get('user_type', 'CLIENT')}")
+                        st.write(f"**Type:** {user.get('app_role', 'client')}")
                         st.write(f"**Status:** {'🟢 Active' if user.get('is_active', True) else '🔴 Inactive'}")
                     with col2:
                         if st.button("View Intakes", key=f"view_{user_key}"):

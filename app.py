@@ -1,11 +1,14 @@
 import streamlit as st
+from firebase_admin import firestore
+from src.config.firebase_config import initialize_firebase
 from src.pages.admindashboard import show_admin_dashboard
 from src.pages.clientdashboard import show_client_dashboard
 from src.pages.intake_form import show_intake_form
+from src.services.client_intake_service import ClientIntakeService  # Fix import name
 from src.services.user_service import UserService
-from src.utils.constants import UserType
 import logging
 import time
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +20,9 @@ def init_session_state():
         st.session_state.user_data = {}
     if "page" not in st.session_state:
         st.session_state.page = "dashboard"
-    if "user_type" not in st.session_state:
-        st.session_state.user_type = None
+    if "show_intake_form" not in st.session_state:
+        st.session_state.show_intake_form = False
+
 
 def init_styling():
     """Initialize app styling"""
@@ -38,9 +42,26 @@ def init_styling():
     """, unsafe_allow_html=True)
 
 def main():
-    st.set_page_config(page_title="NextPhase Insights", page_icon="🚀", layout="wide")
-    init_session_state()
-    init_styling()
+    """Main application entry point"""
+    try:
+        # Initialize Firebase first
+        if 'db' not in st.session_state:
+            st.session_state.db = initialize_firebase()
+            
+        # Configure Streamlit
+        st.set_page_config(
+            page_title="NextPhase Insights",
+            page_icon="🚀",
+            layout="wide"
+        )
+        
+        init_session_state()
+        init_styling()        
+    except Exception as e:
+        st.error(f"Application initialization error: {e}")
+        logger.error(f"Application initialization error: {str(e)}")
+
+
     
     # Display logo in header
     logo_path = "src/assets/nextphase-insights-logo.png"
@@ -57,25 +78,32 @@ def main():
     if "page" not in st.session_state:
         st.session_state.page = "dashboard"
         
+    
     if not st.session_state.authenticated:
         show_auth_page()
     else:
-        # Debug log current page
-        logger.debug(f"Current page: {st.session_state.page}")
+        user_data = st.session_state.user_data  
+        app_role = st.session_state.user_data.get('app_role')
         
-        # Page routing
-        if st.session_state.page == "intake_form":
-            logger.info("Loading intake form")
-            show_intake_form(st.session_state.user_data)
-        elif st.session_state.page == "dashboard":
-            logger.info("Loading client dashboard")
-            show_client_dashboard(st.session_state.user_data)
+        # Check if we should show intake form
+        if st.session_state.get('show_intake_form', False):
+            show_intake_form(user_data)
+        else:
+            if app_role == 'admin':
+                show_admin_dashboard(user_data)
+            elif app_role == 'client':
+                show_client_dashboard(user_data)
+            else:
+                st.error("Unauthorized access. Please contact support.")
+
 
 def show_auth_page():
     """Handle user authentication"""
     st.title("Welcome to NextPhase Insights")
     
-    user_service = UserService()
+    # Initialize Firebase and get db instance
+    db = firestore.client()
+    user_service = UserService(db)
     
     tab1, tab2 = st.tabs(["Login", "Sign Up"])
     
@@ -110,7 +138,7 @@ def show_auth_page():
                         logger.info(f"User logged in successfully: {email}")
                         st.session_state.authenticated = True
                         st.session_state.user_data = user_data
-                        st.session_state.user_type = user_data.get('user_type')
+                        st.session_state.app_role = user_data.get('app_role')
                         st.rerun()
                     else:
                         logger.warning(f"Login failed for email: {email}")
@@ -125,17 +153,36 @@ def show_auth_page():
             
             if st.form_submit_button("Sign Up"):
                 try:
-                    user_data = user_service.create_user(
-                        email=email,
-                        password=password,
-                        user_data={
-                            'company_name': company_name,
-                            'full_name': full_name
-                        }
-                    )
-                    st.success("Account created! Please log in.")
+                    # Validate required fields
+                    if not all([company_name, full_name, email, password]):
+                        st.error("All fields are required")
+                        return
+
+                    # Create user data dictionary
+                    user_data = {
+                        'company_name': company_name,
+                        'full_name': full_name,
+                        'email': email,
+                        'password': password,  
+                        'app_role': 'client',
+                        'created_at': firestore.SERVER_TIMESTAMP,
+                        'updated_at': firestore.SERVER_TIMESTAMP
+                    }
+                    
+                    # Pass only user_data to create_user
+                    created_user = user_service.create_user(user_data)
+                    
+                    if created_user:
+                        st.success("Account created! Please log in.")
+                        logger.info(f"New user account created: {email}")
+                        # Clear form
+                        st.session_state.clear()
+                    else:
+                        st.error("Failed to create account. Please try again.")
+                        
                 except Exception as e:
-                    st.error(f"Failed to create account: {str(e)}")
+                    logger.error(f"Account creation error: {str(e)}")
+                    st.error("Failed to create account. Please try again.")
 
 def show_password_reset():
     """Handle password reset requests"""

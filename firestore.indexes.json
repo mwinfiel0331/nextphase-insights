@@ -1,4 +1,13 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "client-intakes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "client_email", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

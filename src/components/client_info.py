@@ -3,7 +3,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def show_company_info(user_data: dict):
+def show_client_info(user_data: dict):
     st.subheader("Company Information")
     
     # Initialize form data in session state if not exists
